@@ -9,12 +9,8 @@ from turtlesim.msg import Pose
 class turtlebot:
     def __init__(self):
         rospy.init_node("turtle_revolve", anonymous=True)
-        self.vel_pub = rospy.Publisher(
-            "/turtle1/cmd_vel", Twist, queue_size=10
-            )
-        self.pose_subscriber = rospy.Subscriber(
-            "/turtle1/pose", Pose, self.callback
-            )
+        self.velpub = rospy.Publisher("/turtle1/cmd_vel", Twist, queue_size=10)
+        self.posesub = rospy.Subscriber("/turtle1/pose", Pose, self.callback)
         self.pose = Pose()  # Current Pose
         self.dist = 0  # Distace to goal
         self.dist_tol = 0.05  # Tolerable distance between turtle pose and goal
@@ -31,7 +27,7 @@ class turtlebot:
         self.pose.y = round(self.pose.y, 4)
 
     def move2goal(self):
-        cnt = 0     # Compare dist and dist_tol after few iterations
+        cnt = 0  # Compare dist and dist_tol after few iterations
         # otherwise turtle will break from loop earlier
 
         while not rospy.is_shutdown():
@@ -44,7 +40,7 @@ class turtlebot:
             self.vel_msg.angular.z = 1
 
             # Publishing vel_msg
-            self.vel_pub.publish(self.vel_msg)
+            self.velpub.publish(self.vel_msg)
             self.dist = sqrt(
                 pow((self.goal_pose.x - self.pose.x), 2)
                 + pow((self.goal_pose.y - self.pose.y), 2)
@@ -58,7 +54,7 @@ class turtlebot:
         # Stopping our robot after the movement is over
         self.vel_msg.linear.x = 0
         self.vel_msg.angular.z = 0
-        self.vel_pub.publish(self.vel_msg)
+        self.velpub.publish(self.vel_msg)
         rospy.spin()
 
 
@@ -69,4 +65,3 @@ if __name__ == "__main__":
 
     except rospy.ROSInterruptException:
         pass
-        
