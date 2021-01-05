@@ -44,8 +44,10 @@ class edrone_gripper():
                 return GripperResponse(True)
             else:
                 self.deactivate_gripper(box_name)
+                print("PICKABLE BUT FALSE")
                 return GripperResponse(False)
         else:
+            print("NOT PICKABLE")
             return GripperResponse(False)
 
     def activate_gripper(self, model_name_2):

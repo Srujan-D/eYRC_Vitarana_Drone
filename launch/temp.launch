@@ -12,7 +12,7 @@
         <node name="attitude_controller" type="Task_3_VD_2373_attitude_controller.py" pkg="vitarana_drone"/>
         <node name="marker_detect" type="Task_3_VD_2373_marker_detect.py" pkg="vitarana_drone"/>
         <arg name="record" default="true"/>
-        <arg name="duration" default="240"/>
+        <arg name="duration" default="270"/>
         <arg name="rec_name" default="Task_3_VD.bag"/>
         <group if="$(arg record)">
         <node name="throttler_model_states" type="throttle" pkg="topic_tools" args="messages /gazebo/model_states 10"/>        
