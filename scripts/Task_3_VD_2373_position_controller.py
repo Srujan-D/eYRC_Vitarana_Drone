@@ -1,8 +1,16 @@
 #!/usr/bin/env python
 
+'''
+
+PID position controller for the drone
+This node publishes and subsribes the following topics:
+        PUBLICATIONS            SUBSCRIPTIONS
+        /drone_command          /edrone/gps
+                                /edrone/setpoint
+
+'''
 
 # Importing the required libraries
-
 import time
 
 import rospy
@@ -92,20 +100,21 @@ class Edrone:
 
 
     def setpoint_callback(self,msg):
-        if self.subscribed_target[0] != msg.lat or self.subscribed_target[1] != msg.long or self.subscribed_target[2] != msg.alt:
-            self.setpoint_changed=True
-            print('setpoint_changed')
-            self.roll_setpoint_queue=[]
-            self.pitch_setpoint_queue=[]
-        else:
-            self.setpoint_changed=False
-            
+        if msg.lat and msg.long and msg.alt:
+            if self.subscribed_target[0] != msg.lat or self.subscribed_target[1] != msg.long or self.subscribed_target[2] != msg.alt:
+                self.setpoint_changed=True
+                print('setpoint_changed')
+                self.roll_setpoint_queue=[]
+                self.pitch_setpoint_queue=[]
+            else:
+                self.setpoint_changed=False
+                
 
-        self.subscribed_target[0] = msg.lat
-        self.subscribed_target[1] = msg.long
-        self.subscribed_target[2] = msg.alt
+            self.subscribed_target[0] = msg.lat
+            self.subscribed_target[1] = msg.long
+            self.subscribed_target[2] = msg.alt
 
-        self.target[2]=self.subscribed_target[2]        
+            self.target[2]=self.subscribed_target[2]        
 
     def limit_value(self, current, min, max):
         if current < min:

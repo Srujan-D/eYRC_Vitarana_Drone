@@ -24,16 +24,12 @@ class MarkerDetect():
 
         self.img=None
         self.bridge = CvBridge()
-
-        self.img_width=400
-        self.hfov_rad=1.3962634
-        self.focal_length = (self.img_width/2)/math.tan(self.hfov_rad/2)
        
         self.target=[0,0,0]
         self.drone_position=[0,0,0]
-        self.pub_center_x_y = center_x_y()
+        self.pub_center_pixels = center_x_y()
         
-        self.center_x_y=rospy.Publisher("/edrone/center_lat_long", center_x_y, queue_size=1)
+        self.center_x_y = rospy.Publisher("/edrone/center_lat_long", center_x_y, queue_size=1)
       
         rospy.Subscriber("/edrone/camera/image_raw", Image, self.marker_detect_callback) #Subscribing to the camera topic
         rospy.Subscriber("/edrone/range_finder_bottom",LaserScan,self.range_finder_bottom_callback)
@@ -97,27 +93,30 @@ class MarkerDetect():
                 plt.show()
             else:
                 print("-")
-                # self.pub_center_x_y = center_x_y()            
+                # self.pub_center_pixels = center_x_y()            
             
 
     def get_coords_from_img(self,rect):
         
         self.centre_x_pixel=rect[0][0]+rect[0][2]/2
-        self.pub_center_x_y.x=self.centre_x_pixel*self.bottom_sensor_dist/self.focal_length
+        self.pub_center_pixels.x=self.centre_x_pixel
 
         self.centre_y_pixel=rect[0][1]+rect[0][3]/2
-        self.pub_center_x_y.y=self.centre_y_pixel*self.bottom_sensor_dist/self.focal_length
+        self.pub_center_pixels.y=self.centre_y_pixel
         
     
     def detect(self):
-        self.center_x_y.publish(self.pub_center_x_y)
+        print(self.pub_center_pixels)
+        self.center_x_y.publish(self.pub_center_pixels)
 
-        
+    def reset(self):
+        self.center_x_y.publish(center_x_y())
         
 
 def main():
     marker=MarkerDetect()
     r=rospy.Rate(1)
+    rospy.on_shutdown(marker.reset)
     while not rospy.is_shutdown():
         marker.detect()
         r.sleep()

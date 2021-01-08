@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+'''
+
+Node responsible for avoiding and publishing the setpoint to do so.
+
+This node publishes and subsribes the following topics:
+    PUBLICATIONS                SUBSCRIPTIONS                   SERVICES
+    /edrone/obstacle_setpoint   /edrone/range_finder_top        /edrone/activate_gripper
+                                /edrone/range_finder_bottom
+
+'''
+
+
 import rospy
 import math
 import time

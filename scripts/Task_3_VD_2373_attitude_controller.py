@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 """
+
+PID attitude controller of the drone
+
 This python file runs a ROS-node of name attitude_control which controls the roll pitch and yaw angles of the eDrone.
 This node publishes and subsribes the following topics:
         PUBLICATIONS            SUBSCRIPTIONS
@@ -10,8 +13,7 @@ This node publishes and subsribes the following topics:
         /edrone/pwm             /edrone/imu/data
                                 /edrone/drone_command
 
-Rather than using different variables, use list. eg : self.setpoint = [1,2,3], where index corresponds to x,y,z ...rather than defining self.x_setpoint = 1, self.y_setpoint = 2
-CODE MODULARITY AND TECHNIQUES MENTIONED LIKE THIS WILL HELP YOU GAINING MORE MARKS WHILE CODE EVALUATION.
+
 """
 
 # Importing the required libraries
