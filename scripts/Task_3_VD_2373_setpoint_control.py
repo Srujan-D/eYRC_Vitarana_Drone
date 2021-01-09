@@ -21,6 +21,9 @@ from sensor_msgs.msg import NavSatFix
 from vitarana_drone.srv import Gripper
 import csv
 
+# util functions
+from Task_4_VD_2373_utils import *
+
 # Marker Detection
 import cv2
 import numpy as np
@@ -85,7 +88,7 @@ class SetpointControl():
         self.marker_point=-1   #activate from 0
         self.popped=False
         self.pub_marker_data.marker_id=3
-
+        self.publish=True
 
         #  ROS Publishers
         self.setpoint_pub = rospy.Publisher("/edrone/setpoint_control", destination, queue_size=2)
@@ -103,17 +106,17 @@ class SetpointControl():
         self.gripper = rospy.ServiceProxy('/edrone/activate_gripper',Gripper())
 
         # Marker Detection
-
         self.img_width=400
         self.hfov_rad=1.3962634
         self.focal_length = (self.img_width/2)/math.tan(self.hfov_rad/2)
-
+    
+    # Callback to set current drone location
     def gps_callback(self, msg):
         self.drone_position[0] = msg.latitude
         self.drone_position[1] = msg.longitude
         self.drone_position[2] = msg.altitude
 
-
+    # Callback to add QR scanned 
     def qr_callback(self, msg):
         
         try:
@@ -145,11 +148,11 @@ class SetpointControl():
             marker_x_m=(msg.x-self.img_width/2)*(self.drone_position[2]-8.44)/self.focal_length
             marker_y_m=-(msg.y-self.img_width/2)*(self.drone_position[2]-8.44)/self.focal_length    # the "-" is dependent on yaw angle i.e. orientation of drone w.r.t. 3d world
 
-            lat_x = self.x_to_lat(marker_x_m + self.lat_to_x(self.drone_position[0]))
-            long_y = self.y_to_long(marker_y_m + self.long_to_y(self.drone_position[1]))
+            lat_x = x_to_lat(marker_x_m + lat_to_x(self.drone_position[0]))
+            long_y = y_to_long(marker_y_m + long_to_y(self.drone_position[1]))
 
             # print(lat_x,long_y)
-            marker_setpoint= [lat_x,long_y,self.delivered[-1][2]]
+            marker_setpoint= [lat_x,long_y,self.delivered[-1][2]+1]
             print(self.marker_setpoints)
             try:
                 if self.check_range(marker_setpoint[0],self.marker_setpoints[self.marker_point][0]) and  self.check_range(marker_setpoint[1],self.marker_setpoints[self.marker_point][1]) :
@@ -164,8 +167,8 @@ class SetpointControl():
                 self.setpoint_queue.pop(0) # pop the marker searching setpoints 
                 print("First ADDED")
 
-            self.pub_marker_data.err_x_m = self.lat_to_x(self.drone_position[0])+marker_x_m
-            self.pub_marker_data.err_y_m = self.long_to_y(self.drone_position[1])+marker_y_m
+            self.pub_marker_data.err_x_m = lat_to_x(self.drone_position[0])+marker_x_m
+            self.pub_marker_data.err_y_m = long_to_y(self.drone_position[1])+marker_y_m
             # self.pub_marker_data.marker_id=self.building_ids[0]
         else:
             print("no_new_msg",msg)
@@ -181,9 +184,16 @@ class SetpointControl():
                 <= 0.0000047487/3 #0.0000047487
             )
         ):
-            print("NEAR target")
+            # if self.iterations>=30:
+            print("NEAR target's lat long")
+                # self.popped=False
+                # self.check_gripper()
             return True
+            # else:
+            #     self.iterations+=1
+            #     return False
         else:
+            # self.iterations = 0
             return False
 
 
@@ -202,48 +212,32 @@ class SetpointControl():
                 <= 0.2
             )
         ):
-            # if self.iterations>=60:
+            # if self.iterations>=30:
                 # self.popped=False
-            # self.check_gripper()
+                # self.check_gripper()
             return True
             # else:
             #     self.iterations+=1
             #     return False
         else:
-            self.iterations = 0
+            # self.iterations = 0
             return False
 
 
     def drop(self):
         # print("",self.parcels_delivery_coords)
-        if self.parcel_picked and len(self.parcels_delivery_coords)>0 and len(self.setpoint_queue)<=1:
-            self.add_setpoint_to_queue(list(self.parcels_delivery_coords[0]))
-            self.delivered.append(list(self.parcels_delivery_coords[0]))
-            self.parcels_delivery_coords.pop(0)
-            print("GOING TO DELIVERY POINT")
-            # self.delivering=True
-
-
-    def pickup(self):
-        if not self.parcel_picked and len(self.parcels_coords)>0 and len(self.setpoint_queue)<=1:
-            if len(self.picked_up)>0 and (self.picked_up[-1] not in self.setpoint_queue):
-                self.add_setpoint_to_queue(list(self.parcels_coords[0]))
-                self.picked_up.append(list(self.parcels_coords[0]))
-                self.parcels_coords.pop(0)
-                print("GOING TO PICKUP POINT")
-                print("len(self.parcels_coords)",len(self.parcels_coords))
-            elif len(self.picked_up)==0:
-                self.add_setpoint_to_queue(list(self.parcels_coords[0]))
-                self.picked_up.append(list(self.parcels_coords[0]))
-                self.parcels_coords.pop(0)
-                print("GOING TO 1st PICKUP POINT")
-                print("len(self.parcels_coords)",len(self.parcels_coords))
-            else:
-                return
-            # self.delivering=False
-        # elif len(self.parcels_coords)==0:
-        #     self.add_setpoint_to_queue(self.start_coords)
-
+        #TODO: "GOING DOWN FOR DROPPING" not being called --check why
+        if abs(self.delivered[-1][2]-self.marker_setpoints[self.marker_point][2])<=0.05:
+            print("GOING DOWN FOR DROPPING")
+            self.marker_setpoints.insert(self.marker_point,self.marker_setpoints[self.marker_point][0],self.marker_setpoints[self.marker_point][1],self.marker_setpoints[self.marker_point][2]-1)
+            self.marker_setpoints.pop(self.marker_point+1)
+        else:
+            print("Dropped parcel")
+            resp=self.gripper(False)
+            print(resp)
+            print(self.drone_position)
+            self.go_to_marker=False
+            self.parcel_picked=False
 
 
     def check_gripper(self):
@@ -272,12 +266,13 @@ class SetpointControl():
     def search_delivery_marker(self):
         if len(self.setpoint_queue)>0 and self.check_proximity(self.setpoint_queue[0]):
             print("GOING UP")
-            self.setpoint_queue.insert(0,[self.delivered[-1][0],self.delivered[-1][1],self.drone_position[2]+0.5]) 
+            self.setpoint_queue.pop(0)
+            self.setpoint_queue.insert(0,[self.delivered[-1][0],self.delivered[-1][1],self.drone_position[2]+1]) 
             print("UP coords",self.setpoint_queue)
 
         elif len(self.setpoint_queue)==0:
             print("GOING UP")
-            self.setpoint_queue.insert(0,[self.delivered[-1][0],self.delivered[-1][1],self.drone_position[2]+0.5]) 
+            self.setpoint_queue.insert(0,[self.delivered[-1][0],self.delivered[-1][1],self.drone_position[2]+1]) 
             print("UP coords",self.setpoint_queue)
 
 
@@ -291,6 +286,7 @@ class SetpointControl():
                 if not self.parcel_picked and len(self.parcels_coords)>0:
                     if len(self.picked_up)>0 and (self.picked_up[-1] not in self.setpoint_queue):
                         print("GOING TO PICKUP POINT")
+                        self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.parcels_coords[0][2]+2]))
                         self.add_setpoint_to_queue(list(self.parcels_coords[0]))
                         self.picked_up.append(list(self.parcels_coords[0]))
                         self.parcels_coords.pop(0)
@@ -313,6 +309,12 @@ class SetpointControl():
                 else:
                     print("Wandering")
 
+            # if len(self.setpoint_queue)>0 and self.check_proximity(self.setpoint):
+            #     if self.drone_position[2]>self.setpoint[2]:
+            #         self.setpoint_queue.insert(0,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.drone_position[2]])
+            #     else:
+            #         self.setpoint_queue.insert(0,[self.drone_position[0],self.drone_position[1],self.setpoint_queue[1][2]])
+
             if len(self.setpoint_queue)>0 and self.check_proximity(self.setpoint_queue[0]):
 
                 if len(self.setpoint_queue)>1 and abs(self.setpoint_queue[1][2] - self.drone_position[2])>=0.1 and (self.setpoint_queue[0][0]!=self.setpoint_queue[1][0] and self.setpoint_queue[0][1]!=self.setpoint_queue[1][1]):
@@ -330,25 +332,22 @@ class SetpointControl():
                     # elif len(self.setpoint_queue)==0:
                     #     print("reached")
                 elif not self.check_proximity(self.parcels_coords[-1]):
-                    print("POPPing")
+                    print("Default checkpoint reached popping")
                     self.setpoint_queue.pop(0)
-                    print("POPPED")
                     print("CURRENT spq",self.setpoint_queue)
 
-                    # self.building_ids.pop(0)
-                    # self.pub_marker_data.marker_id = self.building_ids[0]
             try:
                 if self.parcel_picked and self.check_lat_long_proximity(self.delivered[-1]) and not self.go_to_marker:
                     print("SEARCHING MARKER")
                     self.search_delivery_marker()
             except Exception as e:
                 print(e)
-            # elif len(self.setpoint_queue)==1:
-            #     print("reached")
+
             self.setpoint=list(self.setpoint_queue[0])
+            self.publish=True
         except Exception as e:
             print("error in popping",e)
-            self.setpoint=list(self.drone_position)
+            self.publish=False
 
 
     def check_marker_queue(self):
@@ -357,22 +356,23 @@ class SetpointControl():
         print("CHECKING MARKER Q")
         if self.check_proximity(self.marker_setpoints[self.marker_point]):
             # self.marker_setpoints.pop(0)
-            print("marker popped")
-            resp=self.gripper(False)
+            self.drop()
+            # print("marker popped")
+            # for i in range(10):
+            #     resp=self.gripper(False)
+
             # while str(resp).split(' ')[1] == 'True':
             #     resp=self.gripper(False)
             #     print("Tried dropping")
             #     resp=self.gripper(True)
-            print(resp)
-            print("Dropped parcel")
-            print(self.drone_position)
-            self.go_to_marker=False
-            self.parcel_picked=False
+            
         try:
             self.setpoint=list(self.marker_setpoints[self.marker_point])
+            self.publish=True
         except:
             print("NO MARKER SETPOINTS")
             self.setpoint=list(self.drone_position)
+            self.publish=False
             
 
     def add_setpoint_to_queue(self, setpoint):
@@ -401,20 +401,8 @@ class SetpointControl():
             pub_msg.alt=self.setpoint[2]
 
         self.dest_msg=pub_msg
-        self.setpoint_pub.publish(pub_msg)
-
-
-    def x_to_lat(self, input_x):
-        return input_x/110692.0702932625 + 19
-
-    def y_to_long(self, input_y):
-        return -input_y/(105292.0089353767 )+ 72
-
-    def lat_to_x(self, input_latitude):
-        return 110692.0702932625 * (input_latitude - 19)
-
-    def long_to_y(self, input_longitude):
-        return -105292.0089353767 * (input_longitude - 72)
+        if self.publish:
+            self.setpoint_pub.publish(pub_msg)
 
     def reset(self):
         self.setpoint_pub.publish(destination())
@@ -448,15 +436,6 @@ def main():
                 counter=0
 
         r.sleep()
-
-
-# Equations of lines
-
-# till parcel
-# y= -0.2889644*x + 77.4904233
-
-# till delivery
-# y= -0.14825840*x + 74.816909775
 
 if __name__ == "__main__":
     main()

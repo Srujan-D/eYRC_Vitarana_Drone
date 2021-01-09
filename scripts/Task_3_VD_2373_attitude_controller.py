@@ -20,9 +20,13 @@ This node publishes and subsribes the following topics:
 
 import math
 import time
-
 import rospy
 import tf
+
+# util functions
+from Task_4_VD_2373_utils import *
+
+
 # from pid_tune.msg import PidTune
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32
@@ -152,13 +156,6 @@ class Edrone:
     
     # ----------------------------------------------------------------------------------------------------------------------
 
-    def limit_value(self, current, min, max):
-        if current < min:
-            return min
-        elif current > max:
-            return max
-        else:
-            return current
 
     def reset(self):
         pwm=prop_speed()
@@ -257,22 +254,19 @@ class Edrone:
             self.throttle + self.out_roll + self.out_pitch + self.out_yaw
         )
 
-        self.pwm_cmd.prop1 = self.limit_value(
+        self.pwm_cmd.prop1 = limit_value(
             self.pwm_cmd.prop1, self.min_values[0], self.max_values[0]
         )
-        self.pwm_cmd.prop2 = self.limit_value(
+        self.pwm_cmd.prop2 = limit_value(
             self.pwm_cmd.prop2, self.min_values[1], self.max_values[1]
         )
-        self.pwm_cmd.prop3 = self.limit_value(
+        self.pwm_cmd.prop3 = limit_value(
             self.pwm_cmd.prop3, self.min_values[2], self.max_values[2]
         )
-        self.pwm_cmd.prop4 = self.limit_value(
+        self.pwm_cmd.prop4 = limit_value(
             self.pwm_cmd.prop4, self.min_values[3], self.max_values[3]
         )
 
-        # ------------------------------------------------------------------------------------------------------------------------
-        # self.roll_pub.publish(self.error[0])
-        # self.pitch_pub.publish(self.error[1])
         self.pwm_pub.publish(self.pwm_cmd)
 
 

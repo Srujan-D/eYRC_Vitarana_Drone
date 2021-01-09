@@ -14,44 +14,22 @@ class Selector():
 
         self.obs_msg = destination()
 
-        # self.obs_msg.lat=0
-        # self.obs_msg.long=0
-        # self.obs_msg.alt=0
-        # self.obs_msg.obstacle_detected=False
-
-
         self.setpoint_control_msg = destination()
-        
-        # self.setpoint_control_msg.lat=0
-        # self.setpoint_control_msg.long=0
-        # self.setpoint_control_msg.alt=0
-        # self.setpoint_control_msg.obstacle_detected=False
-
-        
+                
         self.setpoint_pub = rospy.Publisher("/edrone/setpoint", destination, queue_size=2)
-
 
         rospy.Subscriber("/edrone/obstacle_setpoint",destination,self.obstacle_setpoint_callback)
         rospy.Subscriber("/edrone/setpoint_control",destination,self.setpoint_control_callback)
 
-    def obstacle_setpoint_callback(self,msg):
-        
-        self.obs_msg = msg
 
-        # self.obs_msg_lat=msg.lat
-        # self.obs_msg_long=msg.long
-        # self.obs_msg_alt=msg.alt
-        # self.obs_msg_obstacle_detected=msg.obstacle_detected
+    def obstacle_setpoint_callback(self,msg):
+
+        self.obs_msg = msg
 
 
     def setpoint_control_callback(self,msg):
         
         self.setpoint_control_msg = msg 
-        
-        # self.setpoint_control_msg.lat=msg.lat
-        # self.setpoint_control_msg.long=msg.long
-        # self.setpoint_control_msg.alt=msg.alt
-        # self.setpoint_control_msg.obstacle_detected=msg.obstacle_detected
 
 
     def check(self):
@@ -61,22 +39,11 @@ class Selector():
         if self.obs_msg.obstacle_detected:
             print("avoiding obs")
             pub_msg = self.obs_msg
-
-            # pub_msg.lat=self.obs_msg.lat
-            # pub_msg.long=self.obs_msg.long
-            # pub_msg.alt=self.obs_msg.alt
-            # pub_msg.obstacle_detected=self.ob._msg.obstacle_detected
             
         else:
-            
             pub_msg = self.setpoint_control_msg
             print("Going to setpoint",pub_msg)
 
-            # pub_msg.lat=self.setpoint_control_msg.lat
-            # pub_msg.long=self.setpoint_control_msg.long
-            # pub_msg.alt=self.setpoint_control_msg.alt
-            # pub_msg.obstacle_detected=self.setpoint_control_msg.obstacle_detected
-        
         self.setpoint_pub.publish(pub_msg)
 
 

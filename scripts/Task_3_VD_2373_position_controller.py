@@ -17,6 +17,8 @@ import rospy
 import tf
 import math
 import threading
+from Task_4_VD_2373_utils import *
+
 # from pid_tune.msg import PidTune
 from sensor_msgs.msg import Imu, NavSatFix,LaserScan
 from std_msgs.msg import Float32
@@ -115,16 +117,6 @@ class Edrone:
             self.subscribed_target[2] = msg.alt
 
             self.target[2]=self.subscribed_target[2]        
-
-    def limit_value(self, current, min, max):
-        if current < min:
-            return min
-        elif current > max:
-            return max
-        else:
-            return current
-
-
 
     # if you use this for control, you may have to change the relevant pitch   direction because of the sign
     def lat_to_x(self, input_latitude):
@@ -249,24 +241,24 @@ class Edrone:
         self.cmd_drone.rcYaw = 1500
         self.cmd_drone.rcThrottle = 1500 + self.rpt[2]
 
-        self.cmd_drone.rcRoll = self.limit_value(
+        self.cmd_drone.rcRoll = limit_value(
             self.cmd_drone.rcRoll, self.min_value[0], self.max_value[0]
         )
-        self.cmd_drone.rcPitch = self.limit_value(
+        self.cmd_drone.rcPitch = limit_value(
             self.cmd_drone.rcPitch, self.min_value[1], self.max_value[1]
         )
-        self.cmd_drone.rcThrottle = self.limit_value(
+        self.cmd_drone.rcThrottle = limit_value(
             self.cmd_drone.rcThrottle, self.min_value[2], self.max_value[2]
         )
 
         # limiting the values
-        self.cmd_drone.rcRoll = self.limit_value(
+        self.cmd_drone.rcRoll = limit_value(
             self.cmd_drone.rcRoll, self.min_value[0], self.max_value[0]
         )
-        self.cmd_drone.rcPitch = self.limit_value(
+        self.cmd_drone.rcPitch = limit_value(
             self.cmd_drone.rcPitch, self.min_value[1], self.max_value[1]
         )
-        self.cmd_drone.rcThrottle = self.limit_value(
+        self.cmd_drone.rcThrottle = limit_value(
             self.cmd_drone.rcThrottle, self.min_value[2], self.max_value[2]
         )
 
