@@ -12,11 +12,11 @@ This node publishes and subsribes the following topics:
 
 # Importing the required libraries
 import time
-
 import rospy
 import tf
 import math
-import threading
+
+# util functions
 from Task_4_VD_2373_utils import *
 
 # from pid_tune.msg import PidTune
@@ -26,8 +26,8 @@ from vitarana_drone.msg import *
 from vitarana_drone.srv import Gripper
 
 
-
-lock=threading.Lock()
+# util functions
+from Task_4_VD_2373_utils import *
 
 class Edrone:
     """docstring for Edrone"""
@@ -118,47 +118,25 @@ class Edrone:
 
             self.target[2]=self.subscribed_target[2]        
 
-    # if you use this for control, you may have to change the relevant pitch   direction because of the sign
-    def lat_to_x(self, input_latitude):
-        return 110692.0702932625 * (input_latitude - 19)
+    # method to break down long distance travels into ~5 meter travels in both roll and pitch direction  
+    def create_next_setpoints(self,select_rpt):      
+        print("generating...")
+        err= ( self.subscribed_target[select_rpt] - self.drone_position[select_rpt] )
+        print(select_rpt,err)
+        print("int(err/0.0000451704)",int(err/0.0000451704))
+        if select_rpt==0 and abs(err)>0.0000451704:
+            print("Creating roll path")
+            for i in range(1,1+int(abs(err)/0.0000451704)):
+                self.roll_setpoint_queue.append(self.drone_position[0]+i*0.0000451704 if err>0 else self.drone_position[0]-i*0.0000451704 )
+            self.target[0]=err%0.0000451704
 
-    def long_to_y(self, input_longitude):
-        return -105292.0089353767 * (input_longitude - 72)
-    
-    def x_to_lat(self, input_x):
-        return input_x/110692.0702932625 + 19
-
-    def y_to_long(self, input_y):
-        return -input_y/(105292.0089353767 )+ 72
-
-    def get_current_coords(self):
-        return (self.lat_to_x(self.drone_position[0]),self.long_to_y(self.drone_position[1]),self.drone_position[2])
-
-
-    # TODO: use x,y values and get coordinates of a point 10 meters towards the destination direction
-    def create_next_setpoint(self):
-                 
-        # err=list(self.target)
-        # if err[1]!=0:
-        #     tan_theta = abs(err[0]/err[1])  #TODO:remove abs() here
-        #     # if err[0]>err[1]:
-        #     if abs(err[0])>=self.scaling_factor:
-        #         if abs(err[1])>self.scaling_factor and abs(tan_theta)<1:
-        #             err[1]=self.scaling_factor if err[1]>0 else -self.scaling_factor
-        #             err[0]=self.scaling_factor*tan_theta
-        #         else:
-        #             err[0]=self.scaling_factor if err[0]>0 else -self.scaling_factor
-        #             err[1]=self.scaling_factor/tan_theta
-
-        #     elif abs(err[1])>=self.scaling_factor:
-        #         err[1]=self.scaling_factor if err[1]>0 else -self.scaling_factor
-        #         err[0]=self.scaling_factor*tan_theta
-        #     self.error=list(err)
-        if abs(self.error[0])>0.0000451704:
-            self.error[0]= 0.0000451704 if self.error[0]>0 else -0.0000451704 
-
-        if abs(self.error[1])>0.000047487:
-            self.error[1]= 0.000047487 if self.error[1]>0 else -0.000047487 
+        elif select_rpt==1 and abs(err)>0.000047487:
+            print("Creating pitch path")
+            for i in range(1,1+int(abs(err)/0.000047487)):
+                self.pitch_setpoint_queue.append(self.drone_position[1]+i*0.000047487 if err>0 else self.drone_position[1]-i*0.000047487 ) 
+            self.target[1]=err%0.000047487
+            self.setpoint_changed = False #Backup if self.setpoint_changed is published late
+        
     
     def check_proximity(self):
 
@@ -173,25 +151,8 @@ class Edrone:
         # self.target = list(target_point)       
         # Calculating the error
         if self.setpoint_changed and select_rpt!=2:
-            # self.roll_setpoint_queue=[]
-            # self.pitch_setpoint_queue=[]
-            print("generating...")
-            err= ( self.subscribed_target[select_rpt] - self.drone_position[select_rpt] )
-            print(select_rpt,err)
-            print("int(err/0.0000451704)",int(err/0.0000451704))
-            if select_rpt==0 and abs(err)>0.0000451704:
-                print("Creating roll path")
-                for i in range(1,1+int(abs(err)/0.0000451704)):
-                    self.roll_setpoint_queue.append(self.drone_position[0]+i*0.0000451704 if err>0 else self.drone_position[0]-i*0.0000451704 )
-                self.target[0]=err%0.0000451704
-
-            elif select_rpt==1 and abs(err)>0.000047487:
-                print("Creating pitch path")
-                for i in range(1,1+int(abs(err)/0.000047487)):
-                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*0.000047487 if err>0 else self.drone_position[1]-i*0.000047487 ) 
-                self.target[1]=err%0.000047487
-                self.setpoint_changed = False #Backup if self.setpoint_changed is published late
-        
+            self.create_next_setpoints(select_rpt)
+            
         if select_rpt==0:
             if len(self.roll_setpoint_queue)!=0:
                 self.target[0]=self.roll_setpoint_queue[0]
@@ -215,9 +176,7 @@ class Edrone:
             print("errrrrrr",self.error)
             print('roll_setpoint_queue',self.roll_setpoint_queue)
             print('pitch_setpoint_queue',self.pitch_setpoint_queue)
-        # self.create_next_setpoint()
 
-        #     print("")
 
         self.error_sum[select_rpt] = self.error_sum[select_rpt] + self.error[select_rpt]
         self.error_diff[select_rpt] = (self.error[select_rpt] - self.prev_error[select_rpt])

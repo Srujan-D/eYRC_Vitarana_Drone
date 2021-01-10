@@ -94,8 +94,8 @@ class Obstacle():
         if not self.stray_obstacle:
             print(self.stray_obstacle)
             self.top_sensor_dist=msg.ranges
-            print('top dist is',self.top_sensor_dist)
-            if any([self.top_sensor_dist[i]<=2 for i in range(5)]) and all(self.drone_position):
+            print('top sensor dist is',self.top_sensor_dist)
+            if any([self.top_sensor_dist[i]<=3 for i in range(5)]) and all(self.drone_position):
                 print("MAY DAY!!!!")
                 print(self.top_sensor_dist)
                 self.stop()
@@ -134,28 +134,11 @@ class Obstacle():
         self.check_gripper()
 
 
-    # if you use this for control, you may have to change the relevant pitch   direction because of the sign
-    def lat_to_x(self, input_latitude):
-        return 110692.0702932625 * (input_latitude - 19)
-
-
-    def long_to_y(self, input_longitude):
-        return -105292.0089353767 * (input_longitude - 72)
-
-
-    def x_to_lat(self, input_x):
-        return input_x/110692.0702932625 + 19
-
-
-    def y_to_long(self, input_y):
-        return -input_y/(105292.0089353767 )+ 72
-
-
     def get_side_point(self):
-        x2=self.lat_to_x(self.drone_position[0])
-        x1=self.lat_to_x(self.last_point[0])
-        y2=self.long_to_y(self.drone_position[1])
-        y1=self.long_to_y(self.last_point[1])
+        x2=lat_to_x(self.drone_position[0])
+        x1=lat_to_x(self.last_point[0])
+        y2=long_to_y(self.drone_position[1])
+        y1=long_to_y(self.last_point[1])
         print('x2',x2)
         print('x1',x1)
         print('y2',y2)
@@ -169,8 +152,8 @@ class Obstacle():
             x3 = x2 + 5 * m * math.sqrt(1/(1+(m*m)))
             y3 = y2 - m * (x3-x2)
 
-        set_lat=self.x_to_lat(x3)
-        set_long=self.y_to_long(y3)
+        set_lat=x_to_lat(x3)
+        set_long=y_to_long(y3)
         return (set_lat,set_long)
 
 
@@ -206,8 +189,8 @@ class Obstacle():
  
         coords=self.get_side_point()
         print("")
-        print("SIDE POINTS",coords,self.lat_to_x(coords[0]),self.long_to_y(coords[1]))
-        print("current",self.drone_position,self.lat_to_x(self.drone_position[0]),self.long_to_y(self.drone_position[1]))
+        print("SIDE POINTS",coords,lat_to_x(coords[0]),long_to_y(coords[1]))
+        print("current",self.drone_position,lat_to_x(self.drone_position[0]),long_to_y(self.drone_position[1]))
         self.top_obs.lat = coords[0]
         self.top_obs.long = coords[1]
         self.top_obs.alt = self.drone_position[2]
