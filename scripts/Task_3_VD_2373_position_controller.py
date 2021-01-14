@@ -48,10 +48,11 @@ class Edrone:
 
         
         # Initial settings for the values of Kp, Ki and Kd for roll, pitch and throttle
-        self.Kp = [1000000*15, 1000000*15,1000]
+        self.Kp = [1000000*17.3, 1000000*17.3,1000]
         self.Ki = [0, 0, -0.138]
-        self.Kd = [10000000*11.5, 10000000*11.5, 2300]
+        self.Kd = [10000000*15, 10000000*15, 2300]
         
+
         self.parcel_setpoints=[19.0007046575, 71.9998955286, 21]
         self.target=[0,0,0]
         self.subscribed_target=[0,0,0]
@@ -123,18 +124,18 @@ class Edrone:
         print("generating...")
         err= ( self.subscribed_target[select_rpt] - self.drone_position[select_rpt] )
         print(select_rpt,err)
-        print("int(err/0.0000451704)",int(err/0.0000451704))
-        if select_rpt==0 and abs(err)>0.0000451704:
+        print("int(err/0.0000451704)",int(err/(0.0000451704*2.5)))
+        if select_rpt==0 and abs(err)>(0.0000451704*2.5):
             print("Creating roll path")
-            for i in range(1,1+int(abs(err)/0.0000451704)):
-                self.roll_setpoint_queue.append(self.drone_position[0]+i*0.0000451704 if err>0 else self.drone_position[0]-i*0.0000451704 )
-            self.target[0]=err%0.0000451704
+            for i in range(1,1+int(abs(err)/(0.0000451704*2.5))):
+                self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704*2.5) if err>0 else self.drone_position[0]-i*(0.0000451704*2.5) )
+            self.target[0]=err%((0.0000451704*2.5))
 
-        elif select_rpt==1 and abs(err)>0.000047487:
+        elif select_rpt==1 and abs(err)>(0.000047487*2.5):
             print("Creating pitch path")
-            for i in range(1,1+int(abs(err)/0.000047487)):
-                self.pitch_setpoint_queue.append(self.drone_position[1]+i*0.000047487 if err>0 else self.drone_position[1]-i*0.000047487 ) 
-            self.target[1]=err%0.000047487
+            for i in range(1,1+int(abs(err)/(0.000047487*2.5))):
+                self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487*2.5) if err>0 else self.drone_position[1]-i*(0.000047487*2.5) ) 
+            self.target[1]=err%((0.000047487*2.5))
             self.setpoint_changed = False #Backup if self.setpoint_changed is published late
         
     

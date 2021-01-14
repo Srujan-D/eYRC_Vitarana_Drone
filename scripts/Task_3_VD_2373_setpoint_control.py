@@ -44,7 +44,7 @@ class SetpointControl():
         self.setpoint_queue=[[19.0,72.0,10.0]]
         self.start_coords=[19.0,72.0,8.44099749139]
         self.parcels_delivery_coords=[]
-        self.parcels_coords=[[18.9999864489,71.9999430161,8.44099749139-0.15],[18.9999864489+2*0.000013552,71.9999430161,8.44099749139],[18.9999864489+0.000013552,71.9999430161+0.000014245,8.44099749139]]
+        self.parcels_coords=[[18.9999864489,71.9999430161,8.44099749139],[18.9999864489+0.000013552,71.9999430161+0.000014245,8.44099749139],[18.9999864489+2*0.000013552,71.9999430161,8.44099749139]]
         
         self.delivered=[]   # includes the ongoing setpoint too
         self.picked_up=[]   # includes the ongoing setpoint too
@@ -138,22 +138,34 @@ class SetpointControl():
         if self.prev_maker_data.x!=msg.x and self.prev_maker_data.y!=msg.y :
             
             print("YAAAAYYYYY")
-                                                                                               
-            marker_x_m=(msg.x-self.img_width/2)*(self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length  # - 1 from self.delivered[-1][2] is done coz while reading, I have added 1 so as to maintain a buffer height from the marker 
-            marker_y_m=-(msg.y-self.img_width/2)*(self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length    # the "-" is dependent on yaw angle i.e. orientation of drone w.r.t. 3d world
+                                             # -msg.square_size                                                 
+            marker_x_m=((msg.x-(self.img_width)/2)*(self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length)  + 0.5# - 1 from self.delivered[-1][2] is done coz while reading, I have added 1 so as to maintain a buffer height from the marker 
+            marker_y_m=-(((msg.y-(self.img_width)/2)*(self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length) + 0.25)  # the "-" is dependent on yaw angle i.e. orientation of drone w.r.t. 3d world
 
-            lat_x = x_to_lat(marker_x_m + lat_to_x(self.drone_position[0]))
-            long_y = y_to_long(marker_y_m + long_to_y(self.drone_position[1]))
+            lat_x = x_to_lat(marker_x_m + lat_to_x(self.drone_position[0]))#+9.03e-6/2 
+            long_y = y_to_long(marker_y_m + long_to_y(self.drone_position[1]))#+ 0.0000047487/2
 
             marker_setpoint= [lat_x,long_y,self.delivered[-1][2]+1]
             print(self.marker_setpoints)
             try:
-                if not self.check_lat_long_proximity(marker_setpoint,self.marker_setpoints[self.marker_point]):
+                print("0",marker_setpoint[0]-self.marker_setpoints[self.marker_point][0])
+                print("1",marker_setpoint[1]-self.marker_setpoints[self.marker_point][1])
+                print('self.marker_setpoints',self.marker_setpoints)
+                print("marker_setpoint",marker_setpoint)
+                if (abs(marker_setpoint[0]-self.marker_setpoints[self.marker_point][0])>=0.000004517
+                    and (abs(marker_setpoint[0]-self.marker_setpoints[self.marker_point][0])<=0.00002 
+                    and abs(marker_setpoint[1]-self.marker_setpoints[self.marker_point][1])<=0.00002) 
+                    and abs(marker_setpoint[1]-self.marker_setpoints[self.marker_point][1])>=0.0000047487):
+                    self.marker_setpoints[self.marker_point]=marker_setpoint
+                    print("updated marker_detected point")
+                    self.go_to_marker=True
+                elif abs(marker_setpoint[0]-self.marker_setpoints[self.marker_point][0])>=0.00002 and abs(marker_setpoint[1]-self.marker_setpoints[self.marker_point][1])>=0.00002:
                     self.marker_setpoints.append(marker_setpoint)
                     print("ADDED marker_detected point")
                     self.marker_point+=1
                     self.go_to_marker=True
                     self.setpoint_queue.pop(0) # pop the marker searching setpoints 
+
             except:
                 self.marker_setpoints.append(marker_setpoint)
                 self.go_to_marker=True
@@ -259,6 +271,7 @@ class SetpointControl():
         except Exception as e:
             print('errr',e)
 
+
     def search_delivery_marker(self):
         
         if len(self.setpoint_queue)==0:
@@ -270,13 +283,13 @@ class SetpointControl():
             self.setpoint_queue.insert(0,[self.delivered[-1][0],self.delivered[-1][1],self.drone_position[2]+1]) 
 
 
-
     def check_setpoint_queue(self):
         try:
 
             print(len(self.setpoint_queue),self.setpoint_queue)
             
             if len(self.setpoint_queue)==0 or self.check_proximity(self.setpoint_queue[0]):
+                # GOING TO PICKUP POINT
                 if not self.parcel_picked and len(self.parcels_coords)>0:
                     if len(self.picked_up)>0 and (self.picked_up[-1] not in self.setpoint_queue):
                         print("GOING TO PICKUP POINT")
@@ -294,7 +307,7 @@ class SetpointControl():
                         self.picked_up.append(list(self.parcels_coords[0]))
                         self.parcels_coords.pop(0)
                         print("len(self.parcels_coords)",len(self.parcels_coords))
-                    
+                # GOING TO DELIVERY POINT
                 elif self.parcel_picked and len(self.parcels_delivery_coords)>0 and len(self.picked_up)==len(self.delivered)+1:
                     print("GOING TO DELIVERY POINT")
                     self.add_setpoint_to_queue(list(self.parcels_delivery_coords[0]))
@@ -401,8 +414,10 @@ class SetpointControl():
         if self.publish:
             self.setpoint_pub.publish(pub_msg)
 
+
     def reset(self):
         self.setpoint_pub.publish(destination())
+
 
     def publish_marker_data(self):
         self.marker_data.publish(self.pub_marker_data)

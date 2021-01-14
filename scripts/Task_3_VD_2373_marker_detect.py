@@ -90,7 +90,7 @@ class MarkerDetect():
             if len(logo)!=0:
                 print("detected")
                 self.get_coords_from_img(logo)
-                plt.show()
+                # plt.show()
             else:
                 print("-")
                 # self.pub_center_pixels = center_x_y()            
@@ -103,6 +103,8 @@ class MarkerDetect():
 
         self.centre_y_pixel=rect[0][1]+rect[0][3]/2
         self.pub_center_pixels.y=self.centre_y_pixel
+
+        self.pub_center_pixels.square_size=(rect[0][2]+rect[0][3])/2
         
     
     def detect(self):
