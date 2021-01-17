@@ -48,9 +48,9 @@ class Edrone:
 
         
         # Initial settings for the values of Kp, Ki and Kd for roll, pitch and throttle
-        self.Kp = [1000000*17.3, 1000000*17.3,1000]
+        self.Kp = [1000000*15, 1000000*15,1000]
         self.Ki = [0, 0, -0.138]
-        self.Kd = [10000000*15, 10000000*15, 2300]
+        self.Kd = [10000000*11.5, 10000000*11.5, 2300]
         
 
         self.parcel_setpoints=[19.0007046575, 71.9998955286, 21]
@@ -124,20 +124,89 @@ class Edrone:
         print("generating...")
         err= ( self.subscribed_target[select_rpt] - self.drone_position[select_rpt] )
         print(select_rpt,err)
-        print("int(err/0.0000451704)",int(err/(0.0000451704*2.5)))
-        if select_rpt==0 and abs(err)>(0.0000451704*2.5):
+        print("int(err/0.0000451704)",int(err/(0.0000451704)))
+        if select_rpt==0 and abs(err)>(0.0000451704):
             print("Creating roll path")
-            for i in range(1,1+int(abs(err)/(0.0000451704*2.5))):
-                self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704*2.5) if err>0 else self.drone_position[0]-i*(0.0000451704*2.5) )
-            self.target[0]=err%((0.0000451704*2.5))
+            for i in range(1,1+int(abs(err)/(0.0000451704))):
+                self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704) if err>0 else self.drone_position[0]-i*(0.0000451704) )
+            self.target[0]=err%((0.0000451704))
 
-        elif select_rpt==1 and abs(err)>(0.000047487*2.5):
+        elif select_rpt==1 and abs(err)>(0.000047487):
             print("Creating pitch path")
-            for i in range(1,1+int(abs(err)/(0.000047487*2.5))):
-                self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487*2.5) if err>0 else self.drone_position[1]-i*(0.000047487*2.5) ) 
-            self.target[1]=err%((0.000047487*2.5))
+            for i in range(1,1+int(abs(err)/(0.000047487))):
+                self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487) if err>0 else self.drone_position[1]-i*(0.000047487) ) 
+            self.target[1]=err%((0.000047487))
             self.setpoint_changed = False #Backup if self.setpoint_changed is published late
-        
+    
+    # this is an intermediate method. TODO:Delete this
+    def create_next_straight_setpoints(self,select_rpt):      
+        print("generating...")
+        lat_err = self.subscribed_target[0] - self.drone_position[0] 
+        long_err = self.subscribed_target[1] - self.drone_position[1] 
+        tan_theta = abs(long_err/lat_err)
+
+        if abs( lat_err ) > abs(long_err):
+            if select_rpt==0 and abs(lat_err)>(0.0000451704):
+                print("Creating roll path")
+                for i in range(1,1+int(abs(lat_err)/(0.0000451704))):
+                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704) if lat_err>0 else self.drone_position[0]-i*(0.0000451704) )
+                self.target[0]=lat_err%((0.0000451704))
+
+            elif select_rpt==1 and abs(long_err)>(0.000047487):
+                print("Creating pitch path")
+                for i in range(1,1+int(abs(long_err)/(0.000047487*tan_theta))):
+                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487)*tan_theta if long_err>0 else self.drone_position[1]-i*(0.000047487)*tan_theta ) 
+                self.target[1]=long_err%((0.000047487))
+                self.setpoint_changed = False #Backup if self.setpoint_changed is published late
+        else:
+            if select_rpt==0 and abs(lat_err)>(0.0000451704):
+                print("Creating roll path")
+                for i in range(1,1+int(abs(lat_err)/(0.0000451704*tan_theta))):
+                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704)*tan_theta if lat_err>0 else self.drone_position[0]-i*(0.0000451704)*tan_theta )
+                self.target[0]=lat_err%((0.0000451704))
+
+            elif select_rpt==1 and abs(long_err)>(0.000047487):
+                print("Creating pitch path")
+                for i in range(1,1+int(abs(long_err)/(0.000047487))):
+                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487) if long_err>0 else self.drone_position[1]-i*(0.000047487) ) 
+                self.target[1]=long_err%((0.000047487))
+                self.setpoint_changed = False #Backup if self.setpoint_changed is published late
+      
+
+    # method to break down long distance travels into ~5 meter travels in both roll and pitch direction        
+    def create_next_linear_setpoints(self,select_rpt):      
+        print("generating...")
+        lat_err = self.subscribed_target[0] - self.drone_position[0] 
+        long_err = self.subscribed_target[1] - self.drone_position[1] 
+        tan_theta = abs(long_err/lat_err)
+
+        if abs( lat_err ) > abs(long_err):
+            if abs(lat_err)>(0.0000451704):
+                print("Creating roll path")
+                for i in range(1,1+int(abs(lat_err)/(0.0000451704))):
+                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704) if lat_err>0 else self.drone_position[0]-i*(0.0000451704) )
+
+                print("Creating pitch path")
+                for i in range(1,1+int(abs(long_err)/(0.000047487*tan_theta))):
+                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487)*tan_theta if long_err>0 else self.drone_position[1]-i*(0.000047487)*tan_theta ) 
+                
+                self.target[0]=lat_err%((0.0000451704))
+                self.target[1]=long_err%((0.000047487*tan_theta))
+                self.setpoint_changed = False #Backup if self.setpoint_changed is published late
+        else:
+            if abs(long_err)>(0.000047487):
+                print("Creating roll path")
+                for i in range(1,1+int(abs(lat_err)/(0.0000451704*tan_theta))):
+                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704)*tan_theta if lat_err>0 else self.drone_position[0]-i*(0.0000451704)*tan_theta )
+
+                print("Creating pitch path")
+                for i in range(1,1+int(abs(long_err)/(0.000047487))):
+                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487) if long_err>0 else self.drone_position[1]-i*(0.000047487) ) 
+                
+                self.target[0]=lat_err%((0.0000451704*tan_theta))
+                self.target[1]=long_err%((0.000047487))
+                self.setpoint_changed = False #Backup if self.setpoint_changed is published late
+            
     
     def check_proximity(self):
 
@@ -152,7 +221,7 @@ class Edrone:
         # self.target = list(target_point)       
         # Calculating the error
         if self.setpoint_changed and select_rpt!=2:
-            self.create_next_setpoints(select_rpt)
+            self.create_next_linear_setpoints(select_rpt)
             
         if select_rpt==0:
             if len(self.roll_setpoint_queue)!=0:

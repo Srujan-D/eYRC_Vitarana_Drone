@@ -44,7 +44,7 @@ class SetpointControl():
         self.setpoint_queue=[[19.0,72.0,10.0]]
         self.start_coords=[19.0,72.0,8.44099749139]
         self.parcels_delivery_coords=[]
-        self.parcels_coords=[[18.9999864489,71.9999430161,8.44099749139],[18.9999864489+0.000013552,71.9999430161+0.000014245,8.44099749139],[18.9999864489+2*0.000013552,71.9999430161,8.44099749139]]
+        self.parcels_coords=[[18.9999864489,71.9999430161,8.44099749139],[18.9999864489+0.000013552,71.9999430161+0.000014245,8.44099749139],[18.9999864489+2*0.000013552,71.9999430161,8.44099749139],[19.0,72.0,8.44099749139]]
         
         self.delivered=[]   # includes the ongoing setpoint too
         self.picked_up=[]   # includes the ongoing setpoint too
@@ -313,7 +313,8 @@ class SetpointControl():
                     self.add_setpoint_to_queue(list(self.parcels_delivery_coords[0]))
                     self.delivered.append(list(self.parcels_delivery_coords[0]))
                     self.parcels_delivery_coords.pop(0)
-                
+                elif  not self.parcel_picked and len(self.parcels_coords)==0 and len(self.delivered)==len(self.picked_up):
+                    self.add_setpoint_to_queue(list(self.start_coords))
                 else:
                     print("Wandering",self.setpoint_queue)
                     print("SELF.PICKING",self.picking_parcel)

@@ -40,14 +40,15 @@ class Obstacle():
         self.drone_position=[0,0,0]
         self.last_point=[0,0,0]
         self.stop_coords=[19.0015646575,71.9995,12]
-
+        self.avoiding_setpoint=[]
 
         self.go_up_counter=0
         self.go_up_setpoint=None
         self.setpoint=[0,0,0]
+        self.counter=0
         
         self.stray_obstacle=False
-
+        self.avoiding=False
         self.pub_msg=destination()
         self.top_obs=destination()
         self.bottom_obs=destination()
@@ -80,36 +81,85 @@ class Obstacle():
             print("check_gripper",e)
 
 
+    def check_proximity(self,target,current=None):
+        
+        if current is None:
+            current = self.drone_position
+
+        if (
+            (
+                abs(current[0] - target[0])
+                <= 0.000004517/3 #0.000004517
+            )
+            and (
+                abs(current[1] - target[1])
+                <= 0.0000047487/3 #0.0000047487
+            )
+            and (
+                abs(current[2] - target[2])
+                <= 0.2
+            )
+        ):
+            # if self.iterations>=30:
+                # self.popped=False
+            print("INSIDE PROXIMITY")
+            print('self.target',target)
+            print('self.dronepos',current)
+
+            return True
+            # else:
+            #     self.iterations+=1
+            #     return False
+        else:
+            # self.iterations = 0
+            return False
+
+
+
     def range_finder_top_callback(self,msg):
+        # self.counter+=1
+        # for i in range(4):
+        #     if msg.ranges[i]<=0.3:
+        #         self.stray_obstacle=True
+        #         print("STRAY!!!")
+        #         break
+        #     else:
+        #         self.stray_obstacle=False
 
-        for i in range(4):
-            if self.top_sensor_dist[i]== float("inf") and msg.ranges[i]<=0.3:
-                self.stray_obstacle=True
-                print("STRAY!!!")
-                break
-            else:
-                self.stray_obstacle=False
-
-
-        if not self.stray_obstacle:
-            print(self.stray_obstacle)
+        if not self.avoiding:
+            
+            print("NOT AVOIDING")
+        # if not self.counter%3:
+            # print(self.stray_obstacle)
             self.top_sensor_dist=msg.ranges
             print('top sensor dist is',self.top_sensor_dist)
-            if any([self.top_sensor_dist[i]<=3 for i in range(5)]) and all(self.drone_position):
+            if any([self.top_sensor_dist[i]<=3 and self.top_sensor_dist[i]>=0.5 for i in range(5)]) and all(self.drone_position) :
                 print("MAY DAY!!!!")
                 print(self.top_sensor_dist)
                 self.stop()
-             # if (self.top_sensor_dist[3]<=10 and self.parcel_picked==True):
+                self.avoiding=True
                 self.obstacle_detected_top=True
-                #     self.go_left()
-                #     print("left")
+                
             else:
                 self.obstacle_detected_top=False
                 # if not self.obs_detected():
 
+            
                 #     pub_msg=destination()
+            
 
-                #     self.setpoint_pub.publish(pub_msg)
+                #     self.setpoint_pub.publish(pub_msg
+        
+        else:
+            print("AVOIDING")
+            print(self.drone_position)
+            self.bottom_obs.lat= self.avoiding_setpoint[0]
+            self.bottom_obs.long=self.avoiding_setpoint[1]
+            self.bottom_obs.alt=self.avoiding_setpoint[2]
+            self.bottom_obs.obstacle_detected=True
+
+            if self.check_proximity(self.avoiding_setpoint):
+                self.avoiding=False
 
 
     def range_finder_bottom_callback(self,msg):
@@ -139,6 +189,8 @@ class Obstacle():
         x1=lat_to_x(self.last_point[0])
         y2=long_to_y(self.drone_position[1])
         y1=long_to_y(self.last_point[1])
+        print(self.drone_position)
+        print(self.last_point)
         print('x2',x2)
         print('x1',x1)
         print('y2',y2)
@@ -149,13 +201,15 @@ class Obstacle():
             y3=y2
         else:
             m=(y2-y1)/(x2-x1)
-            x3 = x2 + 5 * m * math.sqrt(1/(1+(m*m)))
-            y3 = y2 - m * (x3-x2)
-
+            x3 = x2 + 2 * m * math.sqrt(1/(1+(m*m)))
+            y3 = y2 - 2 * math.sqrt(1/(1+(m*m)))
+        print('x3',x3)
+        print('y3',y3)
         set_lat=x_to_lat(x3)
         set_long=y_to_long(y3)
+        
         return (set_lat,set_long)
-
+        # return (19.000429913378706,72.00001)
 
     def go_up(self):
 
@@ -195,6 +249,7 @@ class Obstacle():
         self.top_obs.long = coords[1]
         self.top_obs.alt = self.drone_position[2]
         self.top_obs.obstacle_detected=True
+        self.avoiding_setpoint=[ coords[0] , coords[1] , self.drone_position[2] ]
 
 
     def obs_detected(self):
@@ -202,7 +257,7 @@ class Obstacle():
 
 
     def obs_avoid(self):
-        if (self.drone_position[0]-self.last_point[0]>=0.000001) or  (self.drone_position[1]-self.last_point[1]>=0.000001) or  (self.drone_position[2]-self.last_point[2]>=0.1): 
+        if (self.drone_position[0]-self.last_point[0]>=0.00004517/4) or  (self.drone_position[1]-self.last_point[1]>=0.000047487/4) or  (self.drone_position[2]-self.last_point[2]>=0.1): 
             self.last_point=list(self.drone_position)
 
         if self.obstacle_detected_top:
@@ -212,10 +267,15 @@ class Obstacle():
         else:
             self.pub_msg=destination()
 
+    def reset(self):
+        self.setpoint_pub.publish(destination())
+
+
 
 def main():
     obs=Obstacle()
     r = rospy.Rate(50)
+    rospy.on_shutdown(obs.reset)
     while not rospy.is_shutdown():
         print(time.strftime("%H:%M:%S"))
         if all(obs.drone_position):
