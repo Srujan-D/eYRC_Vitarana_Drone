@@ -48,10 +48,12 @@ class Edrone:
 
         
         # Initial settings for the values of Kp, Ki and Kd for roll, pitch and throttle
-        self.Kp = [1000000*15, 1000000*15,1000]
+        # self.Kp = [1000000*15, 1000000*15,1000]
+        # self.Ki = [0, 0, -0.138]
+        # self.Kd = [10000000*11.5, 10000000*11.5, 2300]
+        self.Kp = [1000000*17.3, 1000000*17.3,1000]
         self.Ki = [0, 0, -0.138]
-        self.Kd = [10000000*11.5, 10000000*11.5, 2300]
-        
+        self.Kd = [10000000*15, 10000000*15, 2300]
 
         self.parcel_setpoints=[19.0007046575, 71.9998955286, 21]
         self.target=[0,0,0]
@@ -70,7 +72,8 @@ class Edrone:
         self.rpt = [0.0, 0.0, 0.0]
 
         # self.scaling_factor=0.0000451704
-
+        self.min_lat_limit =  0.0000451704 * 1.5
+        self.min_long_limit = 0.000047487  * 1.5
         
         # minimum and maximum values for roll, pitch and throttle
         self.min_value = [1375, 1375, 1000]
@@ -181,30 +184,30 @@ class Edrone:
         tan_theta = abs(long_err/lat_err)
 
         if abs( lat_err ) > abs(long_err):
-            if abs(lat_err)>(0.0000451704):
+            if abs(lat_err)>(self.min_lat_limit):
                 print("Creating roll path")
-                for i in range(1,1+int(abs(lat_err)/(0.0000451704))):
-                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704) if lat_err>0 else self.drone_position[0]-i*(0.0000451704) )
+                for i in range(1,1+int(abs(lat_err)/(self.min_lat_limit))):
+                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(self.min_lat_limit) if lat_err>0 else self.drone_position[0]-i*(self.min_lat_limit) )
 
                 print("Creating pitch path")
-                for i in range(1,1+int(abs(long_err)/(0.000047487*tan_theta))):
-                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487)*tan_theta if long_err>0 else self.drone_position[1]-i*(0.000047487)*tan_theta ) 
+                for i in range(1,1+int(abs(long_err)/(self.min_long_limit*tan_theta))):
+                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(self.min_long_limit)*tan_theta if long_err>0 else self.drone_position[1]-i*(self.min_long_limit)*tan_theta ) 
                 
-                self.target[0]=lat_err%((0.0000451704))
-                self.target[1]=long_err%((0.000047487*tan_theta))
+                self.target[0]=lat_err%((self.min_lat_limit))
+                self.target[1]=long_err%((self.min_long_limit*tan_theta))
                 self.setpoint_changed = False #Backup if self.setpoint_changed is published late
         else:
-            if abs(long_err)>(0.000047487):
+            if abs(long_err)>(self.min_long_limit):
                 print("Creating roll path")
-                for i in range(1,1+int(abs(lat_err)/(0.0000451704*tan_theta))):
-                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(0.0000451704)*tan_theta if lat_err>0 else self.drone_position[0]-i*(0.0000451704)*tan_theta )
+                for i in range(1,1+int(abs(lat_err)/(self.min_lat_limit*tan_theta))):
+                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(self.min_lat_limit)*tan_theta if lat_err>0 else self.drone_position[0]-i*(self.min_lat_limit)*tan_theta )
 
                 print("Creating pitch path")
-                for i in range(1,1+int(abs(long_err)/(0.000047487))):
-                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(0.000047487) if long_err>0 else self.drone_position[1]-i*(0.000047487) ) 
+                for i in range(1,1+int(abs(long_err)/(self.min_long_limit))):
+                    self.pitch_setpoint_queue.append(self.drone_position[1]+i*(self.min_long_limit) if long_err>0 else self.drone_position[1]-i*(self.min_long_limit) ) 
                 
-                self.target[0]=lat_err%((0.0000451704*tan_theta))
-                self.target[1]=long_err%((0.000047487))
+                self.target[0]=lat_err%((self.min_lat_limit*tan_theta))
+                self.target[1]=long_err%((self.min_long_limit))
                 self.setpoint_changed = False #Backup if self.setpoint_changed is published late
             
     

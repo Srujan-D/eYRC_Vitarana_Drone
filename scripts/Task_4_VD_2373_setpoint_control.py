@@ -137,16 +137,40 @@ class SetpointControl():
         print("CENTER LAT LONG:",msg)
         if self.prev_maker_data.x!=msg.x and self.prev_maker_data.y!=msg.y :
             
-            print("YAAAAYYYYY")
+            # The following are deduced as best fitted keeping in mind the parallax effect & numerous trials
+            x_center = msg.x - (self.img_width / 2 )
+            y_center = msg.y - (self.img_width / 2 )
+            if x_center >= 100:
+                setpoint_x_pixel = (x_center + (msg.square_size/2))
+            elif x_center <= -100:
+                setpoint_x_pixel = (x_center - (msg.square_size/2))
+            else:
+                setpoint_x_pixel = x_center #- (msg.square_size/2)
+            
+            if y_center >= 100:
+                setpoint_y_pixel = (y_center + (msg.square_size/2))
+            elif y_center <= -100:
+                setpoint_y_pixel = (y_center - (msg.square_size/2))
+            else:
+                setpoint_y_pixel = y_center #- (msg.square_size/2)
+                
+
+            # setpoint_y_pixel = (y_center + (msg.square_size/2)) if y_center >= 0 else (y_center - (msg.square_size/2)) 
+            
+            print(setpoint_x_pixel)
+            print(setpoint_y_pixel)
                                              # -msg.square_size                                                 
-            marker_x_m=((msg.x-(self.img_width)/2)*(self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length)  + 0.5# - 1 from self.delivered[-1][2] is done coz while reading, I have added 1 so as to maintain a buffer height from the marker 
-            marker_y_m=-(((msg.y-(self.img_width)/2)*(self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length) + 0.25)  # the "-" is dependent on yaw angle i.e. orientation of drone w.r.t. 3d world
+            marker_x_m = setpoint_x_pixel * (self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length # + 0.5# - 1 from self.delivered[-1][2] is done coz while reading, I have added 1 so as to maintain a buffer height from the marker 
+            marker_y_m = - (setpoint_y_pixel * (self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length ) #+0.25  # the "-" is dependent on yaw angle i.e. orientation of drone w.r.t. 3d world
 
             lat_x = x_to_lat(marker_x_m + lat_to_x(self.drone_position[0]))#+9.03e-6/2 
             long_y = y_to_long(marker_y_m + long_to_y(self.drone_position[1]))#+ 0.0000047487/2
 
             marker_setpoint= [lat_x,long_y,self.delivered[-1][2]+1]
             print(self.marker_setpoints)
+            
+            # if marker_setpoint is near setpoint_queue, only then add the point marker_queue
+            # if abs(marker_setpoint[0]-self.setpoint_queue[0])
             try:
                 print("0",marker_setpoint[0]-self.marker_setpoints[self.marker_point][0])
                 print("1",marker_setpoint[1]-self.marker_setpoints[self.marker_point][1])

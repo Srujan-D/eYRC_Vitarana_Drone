@@ -133,7 +133,7 @@ class Obstacle():
             # print(self.stray_obstacle)
             self.top_sensor_dist=msg.ranges
             print('top sensor dist is',self.top_sensor_dist)
-            if any([self.top_sensor_dist[i]<=3 and self.top_sensor_dist[i]>=0.5 for i in range(5)]) and all(self.drone_position) :
+            if any([self.top_sensor_dist[i]<=4 and self.top_sensor_dist[i]>=0.5 for i in range(5)]) and all(self.drone_position) :
                 print("MAY DAY!!!!")
                 print(self.top_sensor_dist)
                 self.stop()
@@ -201,8 +201,8 @@ class Obstacle():
             y3=y2
         else:
             m=(y2-y1)/(x2-x1)
-            x3 = x2 + 2 * m * math.sqrt(1/(1+(m*m)))
-            y3 = y2 - 2 * math.sqrt(1/(1+(m*m)))
+            x3 = x2 + 4 * m * math.sqrt(1/(1+(m*m)))
+            y3 = y2 - 4 * math.sqrt(1/(1+(m*m)))
         print('x3',x3)
         print('y3',y3)
         set_lat=x_to_lat(x3)
