@@ -5,4 +5,18 @@
             file="$(find gazebo_ros)/launch/empty_world.launch">
             <arg name="world_name"  value="$(find vitarana_drone)/worlds/sector_task_3$(arg static).world"/>
         </include>
+        <node name="obstacle" type="Task_3_VD_2373_obstacle.py" pkg="vitarana_drone"/>
+        <node name="setpoint_control" type="Task_3_VD_2373_setpoint_control.py" pkg="vitarana_drone"/>
+        <node name="setpoint_selector" type="Task_3_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
+        <node name="position_controller" type="Task_3_VD_2373_position_controller.py" pkg="vitarana_drone"/>
+        <node name="attitude_controller" type="Task_3_VD_2373_attitude_controller.py" pkg="vitarana_drone"/>
+        <node name="marker_detect" type="Task_3_VD_2373_marker_detect.py" pkg="vitarana_drone"/>
+        <arg name="record" default="true"/>
+        <arg name="duration" default="240"/>
+        <arg name="rec_name" default="Task_3_VD.bag"/>
+        <group if="$(arg record)">
+        <node name="throttler_model_states" type="throttle" pkg="topic_tools" args="messages /gazebo/model_states 10"/>        
+        <node name="rosbag_record_position" pkg="rosbag" type="record"
+        args="record -O $(find vitarana_drone)/bag_files/$(arg rec_name) --duration=$(arg duration) /gazebo/model_states_throttle /edrone/marker_data" output="screen"/>
+</group>
 </launch>

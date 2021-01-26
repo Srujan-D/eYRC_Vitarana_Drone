@@ -36,6 +36,9 @@ include_directories(${Boost_INCLUDE_DIRS})
    prop_speed.msg
    edrone_cmd.msg
    MarkerData.msg
+   qr_scanner.msg
+   destination.msg
+   center_x_y.msg
  )
 
 ## Generate services in the 'srv' folder

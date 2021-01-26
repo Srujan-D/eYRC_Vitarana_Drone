@@ -7,4 +7,8 @@
         </include>
         <node name="throttler_model_states" type="throttle" pkg="topic_tools" args="messages /gazebo/model_states 10"/>
         <node name="gripper_service" type="gripper_service.py" pkg="vitarana_drone"/>
+        <node name="qr_code" type="Task_3_VD_2373_qr_detect.py" pkg="vitarana_drone"/>
+        <!-- <node name="obstacle" type="Task_3_VD_2373_obstacle.py" pkg="vitarana_drone"/> -->
+        <!-- <node name="setpoint_control" type="Task_3_VD_2373_setpoint_control.py" pkg="vitarana_drone"/> -->
+        <node name="setpoint_selector" type="Task_3_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
 </launch>
