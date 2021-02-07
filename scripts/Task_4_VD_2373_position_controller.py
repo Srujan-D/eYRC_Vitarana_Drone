@@ -145,9 +145,11 @@ class Edrone:
     def create_next_straight_setpoints(self,select_rpt):      
         print("generating...")
         lat_err = self.subscribed_target[0] - self.drone_position[0] 
-        long_err = self.subscribed_target[1] - self.drone_position[1] 
-        tan_theta = abs(long_err/lat_err)
-
+        long_err = self.subscribed_target[1] - self.drone_position[1]
+        try: 
+            tan_theta = abs(long_err/lat_err)
+        except Exception as e:
+            tan_theta =9999999999
         if abs( lat_err ) > abs(long_err):
             if select_rpt==0 and abs(lat_err)>(0.0000451704):
                 print("Creating roll path")
@@ -177,11 +179,14 @@ class Edrone:
       
 
     # method to break down long distance travels into ~5 meter travels in both roll and pitch direction        
-    def create_next_linear_setpoints(self,select_rpt):      
+    def create_next_linear_setpoints(self):      
         print("generating...")
         lat_err = self.subscribed_target[0] - self.drone_position[0] 
         long_err = self.subscribed_target[1] - self.drone_position[1] 
-        tan_theta = abs(long_err/lat_err)
+        try: 
+            tan_theta = abs(long_err/lat_err)
+        except Exception as e:
+            tan_theta =9999999999
 
         if abs( lat_err ) > abs(long_err):
             if abs(lat_err)>(self.min_lat_limit):
@@ -190,7 +195,8 @@ class Edrone:
                     self.roll_setpoint_queue.append(self.drone_position[0]+i*(self.min_lat_limit) if lat_err>0 else self.drone_position[0]-i*(self.min_lat_limit) )
 
                 print("Creating pitch path")
-                for i in range(1,1+int(abs(long_err)/(self.min_long_limit*tan_theta))):
+                for i in range(1,1+int(abs(lat_err)/(self.min_lat_limit))):
+                # for i in range(1,1+int(abs(long_err)/(self.min_long_limit*tan_theta))):
                     self.pitch_setpoint_queue.append(self.drone_position[1]+i*(self.min_long_limit)*tan_theta if long_err>0 else self.drone_position[1]-i*(self.min_long_limit)*tan_theta ) 
                 
                 self.target[0]=lat_err%((self.min_lat_limit))
@@ -199,8 +205,9 @@ class Edrone:
         else:
             if abs(long_err)>(self.min_long_limit):
                 print("Creating roll path")
-                for i in range(1,1+int(abs(lat_err)/(self.min_lat_limit*tan_theta))):
-                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(self.min_lat_limit)*tan_theta if lat_err>0 else self.drone_position[0]-i*(self.min_lat_limit)*tan_theta )
+                for i in range(1,1+int(abs(long_err)/(self.min_long_limit))):
+                # for i in range(1,1+int(abs(lat_err)/(self.min_lat_limit*tan_theta))):
+                    self.roll_setpoint_queue.append(self.drone_position[0]+i*(self.min_lat_limit)/tan_theta if lat_err>0 else self.drone_position[0]-i*(self.min_lat_limit)/tan_theta )
 
                 print("Creating pitch path")
                 for i in range(1,1+int(abs(long_err)/(self.min_long_limit))):
@@ -220,68 +227,71 @@ class Edrone:
             self.pitch_setpoint_queue.pop(0)
 
 
-    def pid(self,select_rpt,):
+    def pid(self,):
         # self.target = list(target_point)       
         # Calculating the error
-        if self.setpoint_changed and select_rpt!=2:
-            self.create_next_linear_setpoints(select_rpt)
+        if self.setpoint_changed :
+            self.create_next_linear_setpoints()
             
-        if select_rpt==0:
-            if len(self.roll_setpoint_queue)!=0:
-                self.target[0]=self.roll_setpoint_queue[0]
-            else:
-                self.target[0]=self.subscribed_target[0]
+        if len(self.roll_setpoint_queue)!=0:
+            self.target[0]=self.roll_setpoint_queue[0]
+        else:
+            self.target[0]=self.subscribed_target[0]
 
-        if select_rpt==1:
-            if len(self.pitch_setpoint_queue)!=0:
-                self.target[1]=self.pitch_setpoint_queue[0]
-            else:
-                self.target[1]=self.subscribed_target[1]
+        if len(self.pitch_setpoint_queue)!=0:
+            self.target[1]=self.pitch_setpoint_queue[0]
+        else:
+            self.target[1]=self.subscribed_target[1]
         
         self.check_proximity()
 
-        self.error[select_rpt] = ( self.target[select_rpt] - self.drone_position[select_rpt] )
+        self.error[0] = ( self.target[0] - self.drone_position[0] )
+        self.error[1] = ( self.target[1] - self.drone_position[1] )
+        self.error[2] = ( self.target[2] - self.drone_position[2] )
 
-        if not select_rpt:
-            print("")
-            print("Target",self.target)
-            # print("Drone_pos",self.drone_position)
-            print("errrrrrr",self.error)
-            print('roll_setpoint_queue',self.roll_setpoint_queue)
-            print('pitch_setpoint_queue',self.pitch_setpoint_queue)
+        print("")
+        print("Target",self.target)
+        print("Drone_pos",self.drone_position)
+        print("errrrrrr",self.error)
+        print('roll_setpoint_queue',self.roll_setpoint_queue)
+        print('pitch_setpoint_queue',self.pitch_setpoint_queue)
 
 
-        self.error_sum[select_rpt] = self.error_sum[select_rpt] + self.error[select_rpt]
-        self.error_diff[select_rpt] = (self.error[select_rpt] - self.prev_error[select_rpt])
+        self.error_sum[0] = self.error_sum[0] + self.error[0]
+        self.error_diff[0] = (self.error[0] - self.prev_error[0])
+        self.error_sum[1] = self.error_sum[1] + self.error[1]
+        self.error_diff[1] = (self.error[1] - self.prev_error[1])
+        self.error_sum[2] = self.error_sum[2] + self.error[2]
+        self.error_diff[2] = (self.error[2] - self.prev_error[2])
 
 
         # Calculating pid values
-        self.rpt[select_rpt] = (
-            (self.Kp[select_rpt] * self.error[select_rpt])
-            + (self.Ki[select_rpt] * self.error_sum[select_rpt]) *
-            self.sample_time
-            + (self.Kd[select_rpt] *
-            (self.error_diff[select_rpt]) / self.sample_time)
+        self.rpt[0] = (
+            (self.Kp[0] * self.error[0])
+            + (self.Ki[0] * self.error_sum[0]) * self.sample_time
+            + (self.Kd[0] * (self.error_diff[0]) / self.sample_time)
+        )
+        self.rpt[1] = (
+            (self.Kp[1] * self.error[1])
+            + (self.Ki[1] * self.error_sum[1]) * self.sample_time
+            + (self.Kd[1] * (self.error_diff[1]) / self.sample_time)
+        )
+        self.rpt[2] = (
+            (self.Kp[2] * self.error[2])
+            + (self.Ki[2] * self.error_sum[2]) * self.sample_time
+            + (self.Kd[2] * (self.error_diff[2]) / self.sample_time)
         )
 
         # Changing the previous error values
-        self.prev_error[select_rpt] = self.error[select_rpt]
+        self.prev_error[0] = self.error[0]
+        self.prev_error[1] = self.error[1]
+        self.prev_error[2] = self.error[2]
 
         #------------------------------------------------#
         self.cmd_drone.rcRoll = 1500 + self.rpt[0]
         self.cmd_drone.rcPitch = 1500 + self.rpt[1]
         self.cmd_drone.rcYaw = 1500
         self.cmd_drone.rcThrottle = 1500 + self.rpt[2]
-
-        self.cmd_drone.rcRoll = limit_value(
-            self.cmd_drone.rcRoll, self.min_value[0], self.max_value[0]
-        )
-        self.cmd_drone.rcPitch = limit_value(
-            self.cmd_drone.rcPitch, self.min_value[1], self.max_value[1]
-        )
-        self.cmd_drone.rcThrottle = limit_value(
-            self.cmd_drone.rcThrottle, self.min_value[2], self.max_value[2]
-        )
 
         # limiting the values
         self.cmd_drone.rcRoll = limit_value(
@@ -315,8 +325,6 @@ if __name__ == "__main__":
 
         if all(e_drone.drone_position):# and not e_drone.obstacle_detected_bottom and not  e_drone.obstacle_detected_top :
             print(time.strftime("%H:%M:%S"))
-            e_drone.pid(0)
-            e_drone.pid(1)
-            e_drone.pid(2)
+            e_drone.pid()
 
         r.sleep()

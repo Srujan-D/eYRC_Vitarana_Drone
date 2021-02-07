@@ -6,6 +6,6 @@
             <arg name="world_name"  value="$(find vitarana_drone)/worlds/drone$(arg static).world"/>
         </include>
         <!-- <node name="setpoint_control" type="Task_3_VD_2373_setpoint_control.py" pkg="vitarana_drone"/> -->
-        <node name="setpoint_selector" type="Task_3_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
+        <node name="setpoint_selector" type="Task_4_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
 
 </launch>
