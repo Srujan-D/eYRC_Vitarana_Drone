@@ -273,6 +273,7 @@ class Edrone:
 if __name__ == "__main__":
 
     e_drone = Edrone()
+    #TODO: vary the publishing rate 
     r = rospy.Rate(50)  # specify rate in Hz based upon your desired PID sampling time, i.e. if desired sample time is 33ms specify rate as 30Hz
     rospy.on_shutdown(e_drone.reset)
 

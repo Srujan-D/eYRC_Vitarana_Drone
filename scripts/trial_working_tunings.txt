@@ -27,3 +27,10 @@ self.Kd = [10000000*11.5, 10000000*11.5, 2300]
 self.Kp = [1000000*17.3, 1000000*17.3,1000]
 self.Ki = [0, 0, -0.138]
 self.Kd = [10000000*15, 10000000*15, 2300]
+
+self.Kp = [1000000*4*17, 1000000*4*17,1000]
+self.Ki = [0, 0, -0.138]
+self.Kd = [10000000*50, 10000000*50, 2300]
+
+for roll_Kd=10000000*50 is almost the upper bound. Above it, it never stabilizes.
+    For this exact value, it takes time to stabilize at equilibruim position

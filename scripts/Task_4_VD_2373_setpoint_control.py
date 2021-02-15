@@ -40,9 +40,15 @@ class SetpointControl():
         self.drone_position=[0,0,0]
         self.drone_height=0.31
 
+        # Task_4
+        # self.setpoint_queue=[[19,72,10]]#[[18.99988879058862, 72.00021844012868, 18.757980880739165]]
+        # self.start_coords=[19.0,72.0,8.44099749139]#[18.99988879058862, 72.00021844012868, 16.757980880739165]
+        # self.parcels_delivery_coords=[[19.0007030405,71.9999429002,22.1600026799],[18.9993676146,71.9999999999,10.65496],[19.0004681325,72.0000949773,16.660019864],]
+        # self.parcels_coords=[[18.9999864489,71.9999430161,8.44099749139-0.1],[18.9999864489+0.000013552,71.9999430161+0.000014245,8.44099749139-0.1],[18.9999864489+2*0.000013552,71.9999430161,8.44099749139-0.1],[19.0,72.0,8.44099749139]]
+        self.instructions=['DELIVERY','DELIVERY','DELIVERY']
         
-        self.setpoint_queue=[[18.99988879058862, 72.00021844012868, 18.757980880739165]]
-        self.start_coords=[18.99988879058862, 72.00021844012868, 16.757980880739165]
+        self.start_coords= [18.99988879058862, 72.00021844012868, 16.757980880739165]
+        self.setpoint_queue=[[self.start_coords[0],self.start_coords[1],self.start_coords[2]+2]]
         self.parcels_delivery_coords=[]
         self.parcels_coords=[]#[[18.9999864489,71.9999430161,8.44099749139],[18.9999864489+0.000013552,71.9999430161+0.000014245,8.44099749139],[18.9999864489+2*0.000013552,71.9999430161,8.44099749139],[19.0,72.0,8.44099749139]]
         
@@ -57,9 +63,11 @@ class SetpointControl():
         # [19.000924871823383, 71.99983189451873, 25.6600061035167]
                     # 71.99987938144884
         # Task 1 final point
-        # [19.0000451704, 72.0, 0.31]
-        # [[19.0000451704, 72.0, 3.0],[19.0+2*0.0000451704, 72.0, 3.0],]
-        
+        # [[19.0004,71.9997,10]]
+
+        # Task 2 obs avoid testing:
+        # [19.0001646575,71.9999,26.1599967919]
+
         # Task 3
         # start point [18.99924113805385, 71.99981954948407, 16.660023269655206]
         # [[18.9993675932, 72.0000569892, 10.7+17],[18.9990965928,72.0000664814,10.75+10],[18.9990965925, 71.9999050292, 22.2+10]]
@@ -88,6 +96,7 @@ class SetpointControl():
         self.popped=False
         self.pub_marker_data.marker_id=3
         self.publish=True
+        self.last_spq_popped=None
 
         #  ROS Publishers
         self.setpoint_pub = rospy.Publisher("/edrone/setpoint_control", destination, queue_size=2)
@@ -192,13 +201,13 @@ class SetpointControl():
                         print("ADDED marker_detected point")
                         self.marker_point+=1
                         self.go_to_marker=True
-                        self.setpoint_queue.pop(0) # pop the marker searching setpoints 
+                        self.last_spq_popped=self.setpoint_queue.pop(0) # pop the marker searching setpoints 
                         print('self.delivered',self.delivered)
                 except:
                     self.marker_setpoints.append(marker_setpoint)
                     self.go_to_marker=True
                     self.marker_point+=1
-                    self.setpoint_queue.pop(0) # pop the marker searching setpoints 
+                    self.last_spq_popped=self.setpoint_queue.pop(0) # pop the marker searching setpoints 
                     print("First ADDED")
 
                 self.pub_marker_data.err_x_m = lat_to_x(self.drone_position[0])+marker_x_m
@@ -244,8 +253,8 @@ class SetpointControl():
                 <= 0.2
             )
         ):
-            if self.proximity_iterations>=30:
-                # self.popped=False
+            if self.proximity_iterations>=60:
+                self.popped=False
                 self.check_gripper()
                 print("INSIDE PROXIMITY")
                 print('self.target',target)
@@ -256,7 +265,7 @@ class SetpointControl():
                 self.proximity_iterations+=1
                 return False
         else:
-            # self.iterations = 0
+            self.iterations = 0
             return False
 
     def leave_parcel(self):
@@ -303,7 +312,7 @@ class SetpointControl():
                 if not self.popped:
                     self.popped=True
                     # self.drop()
-                    self.setpoint_queue.pop(0)
+                    self.last_spq_popped=self.setpoint_queue.pop(0)
                     print("POPPED FROM CHECK GRIPPER")
                     print('after',self.setpoint_queue)
                     self.setpoint=list(self.setpoint_queue[0])
@@ -322,7 +331,7 @@ class SetpointControl():
         
         elif len(self.setpoint_queue)>0 and self.check_proximity(self.setpoint_queue[0]):
             print("GOING UP")
-            self.setpoint_queue.pop(0)
+            self.last_spq_popped=self.setpoint_queue.pop(0)
             self.setpoint_queue.insert(0,[self.delivered[-1][0],self.delivered[-1][1],self.drone_position[2]+1]) 
         self.searching_marker=True
 
@@ -385,7 +394,7 @@ class SetpointControl():
                     else:
                         self.setpoint_queue.insert(0,[self.drone_position[0],self.drone_position[1],self.setpoint_queue[1][2]])
 
-                    self.setpoint_queue.pop(1)
+                    self.last_spq_popped=self.setpoint_queue.pop(1)
                     # self.setpoint=list(self.setpoint_queue[0])
                     # return
                     # print("Going to",self.setpoint_queue)
@@ -394,12 +403,15 @@ class SetpointControl():
                 elif not self.picking_parcel :
                     if len(self.setpoint_queue)>1 and self.check_lat_long_proximity(self.setpoint_queue[0],self.setpoint_queue[1]) and self.setpoint_queue[0][2]>self.setpoint_queue[1][2] and not self.parcel_picked:
                         print("self.picking_parcel=True")
-                        self.picking_parcel=True
+                        if(self.setpoint_queue[0][2]-self.setpoint_queue[1][2])>3:
+                            self.setpoint_queue.insert(1,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.setpoint_queue[0][2]-3])
+                        else:    
+                            self.picking_parcel=True
                     else:
                         print("self.picking_parcel=False")
                         self.picking_parcel=False
                     print("Default checkpoint reached popping")
-                    self.setpoint_queue.pop(0)
+                    self.last_spq_popped=self.setpoint_queue.pop(0)
                     print("Updated spq",self.setpoint_queue)
 
             try:
@@ -410,6 +422,10 @@ class SetpointControl():
                 elif self.parcel_picked and self.check_proximity(self.delivered[-1]) and not self.go_to_marker and self.instructions[0]=='RETURN':
                     print("DROPPING RETURN")
                     self.drop()
+                elif self.parcel_picked and self.check_lat_long_proximity(self.delivered[-1]) and not self.go_to_marker and self.instructions[0]=='RETURN':
+                    print("Going down for returning")
+                    if self.check_proximity(self.last_spq_popped):
+                        self.setpoint_queue.insert(0,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.setpoint_queue[0][2]-3])
 
             except Exception as e:
                 print("SEARCHING MARKER ERROR",e)

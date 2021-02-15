@@ -7,11 +7,11 @@
     </include>
     <node name="gripper_service" type="gripper_service.py" pkg="vitarana_drone"/>
     <node name="setpoint_selector" type="Task_4_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
-    <node name="setpoint_control" type="Task_4_VD_2373_setpoint_control.py" pkg="vitarana_drone"/>
+    <!-- <node name="setpoint_control" type="Task_4_VD_2373_setpoint_control.py" pkg="vitarana_drone"/> -->
     <node name="marker_detect" type="Task_4_VD_2373_marker_detect.py" pkg="vitarana_drone"/>
-    <node name="position_controller" type="Task_4_VD_2373_position_controller.py" pkg="vitarana_drone"/>
-    <node name="attitude_controller" type="Task_4_VD_2373_attitude_controller.py" pkg="vitarana_drone"/>
-    <node name="obstacle" type="Task_4_VD_2373_obstacle.py" pkg="vitarana_drone"/>
+    <!-- <node name="position_controller" type="Task_4_VD_2373_position_controller.py" pkg="vitarana_drone"/> -->
+    <!-- <node name="attitude_controller" type="Task_4_VD_2373_attitude_controller.py" pkg="vitarana_drone"/> -->
+    <!-- <node name="obstacle" type="Task_4_VD_2373_obstacle.py" pkg="vitarana_drone"/> -->
 
     <arg name="record" default="false"/>
     <arg name="duration" default="480"/>

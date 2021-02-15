@@ -45,13 +45,16 @@ class Obstacle():
         self.go_up_counter=0
         self.go_up_setpoint=None
         self.setpoint=[0,0,0]
-        self.counter=0
+        self.iterations=0
+        self.stopped_at_current_pos=False
+        self.current_pos_set=False
         
         self.stray_obstacle=False
         self.avoiding=False
         self.pub_msg=destination()
         self.top_obs=destination()
         self.bottom_obs=destination()
+        self.subs_setpoint=[0,0,0]
         # Publishers
         # self.cmd_pub = rospy.Publisher("/edrone/setpoint", destination, queue_size=1)
         self.setpoint_pub = rospy.Publisher("/edrone/obstacle_setpoint", destination, queue_size=2)
@@ -61,6 +64,7 @@ class Obstacle():
         rospy.Subscriber("/edrone/range_finder_top",LaserScan,self.range_finder_top_callback)
         # rospy.Subscriber("/edrone/range_finder_bottom",LaserScan,self.range_finder_bottom_callback)
         rospy.Subscriber("/edrone/gps", NavSatFix, self.gps_callback)
+        rospy.Subscriber("/edrone/setpoint",destination,self.setpoint_callback)
         
         # Services
         self.gripper = rospy.ServiceProxy('/edrone/activate_gripper',Gripper())
@@ -71,6 +75,11 @@ class Obstacle():
         self.drone_position[1] = msg.longitude
         self.drone_position[2] = msg.altitude
 
+
+    def setpoint_callback(self,msg):
+        self.subs_setpoint[0]=msg.lat
+        self.subs_setpoint[1]=msg.long
+        self.subs_setpoint[2]=msg.alt
 
     def check_gripper(self):
         try:
@@ -101,7 +110,7 @@ class Obstacle():
             )
         ):
             # if self.iterations>=30:
-                # self.popped=False
+            #     self.popped=False
             print("INSIDE PROXIMITY")
             print('self.target',target)
             print('self.dronepos',current)
@@ -112,6 +121,40 @@ class Obstacle():
             #     return False
         else:
             # self.iterations = 0
+            return False
+
+
+    def check_proximity_with_iter(self,target,current=None):
+        
+        if current is None:
+            current = self.drone_position
+
+        if (
+            (
+                abs(current[0] - target[0])
+                <= 0.000004517/3 #0.000004517
+            )
+            and (
+                abs(current[1] - target[1])
+                <= 0.0000047487/3 #0.0000047487
+            )
+            and (
+                abs(current[2] - target[2])
+                <= 0.2
+            )
+        ):
+            if self.iterations>=50:
+                
+                print("INSIDE PROXIMITY")
+                print('self.target',target)
+                print('self.dronepos',current)
+
+                return True
+            else:
+                self.iterations+=1
+                return False
+        else:
+            self.iterations = 0
             return False
 
 
@@ -133,26 +176,29 @@ class Obstacle():
             # print(self.stray_obstacle)
             self.top_sensor_dist=msg.ranges
             print('top sensor dist is',self.top_sensor_dist)
-            if any([self.top_sensor_dist[i]<=4 and self.top_sensor_dist[i]>=0.5 for i in range(5)]) and all(self.drone_position) :
+            if (any([self.top_sensor_dist[i]<=5 and self.top_sensor_dist[i]>=0.5 for i in range(5)])) and all(self.drone_position) :#or ((self.top_sensor_dist[3]<=25 and self.top_sensor_dist[3]>=0.5 )) :
                 print("MAY DAY!!!!")
                 print(self.top_sensor_dist)
+                # if self.stopped_at_current_pos:
                 self.stop()
+                print("STOP")
+                    # self.current_pos_set=False
+                # else:
+                    # print("STOP at current pos")
+                    # self.stop_at_current_pos()
                 self.avoiding=True
                 self.obstacle_detected_top=True
                 
             else:
                 self.obstacle_detected_top=False
                 # if not self.obs_detected():
-
-            
                 #     pub_msg=destination()
-            
-
                 #     self.setpoint_pub.publish(pub_msg
         
         else:
             print("AVOIDING")
-            print(self.drone_position)
+            print('self.drone_position',self.drone_position)
+            print('self.avoiding_setpoint',self.avoiding_setpoint)
             self.bottom_obs.lat= self.avoiding_setpoint[0]
             self.bottom_obs.long=self.avoiding_setpoint[1]
             self.bottom_obs.alt=self.avoiding_setpoint[2]
@@ -183,6 +229,47 @@ class Obstacle():
             #     self.setpoint_pub.publish(pub_msg)
         self.check_gripper()
 
+    def stop_at_current_pos_coords(self):
+        x2=lat_to_x(self.drone_position[0])
+        x1=lat_to_x(self.subs_setpoint[0])
+        y2=long_to_y(self.drone_position[1])
+        y1=long_to_y(self.subs_setpoint[1])
+        print(self.drone_position)
+        print(self.subs_setpoint)
+        print('x2',x2,self.drone_position[0])
+        print('x1',x1,self.subs_setpoint[0])
+        print('y2',y2,self.drone_position[1])
+        print('y1',y1,self.subs_setpoint[1])
+
+        if x2==x1:
+            x3=x2+1
+            y3=y2
+        else:
+            m=(y2-y1)/(x2-x1)
+            x3 = x2 - 50 * math.sqrt(1/(1+(m*m)))
+            y3 = y2 + 50 *m * math.sqrt(1/(1+(m*m)))
+        set_lat=x_to_lat(x3)
+        set_long=y_to_long(y3)
+        print('going to: x3',x3,set_lat)
+        print('going to: y3',y3,set_long)
+        
+        return (set_lat,set_long)
+
+    def stop_at_current_pos(self):
+        if not self.current_pos_set:
+            # TODO: use self.subs_setpoint & self.drone_position to get the coordinates of coordinate behind along the line of motion  
+            coords=self.stop_at_current_pos_coords()
+            self.top_obs.lat = coords[0]
+            self.top_obs.long = coords[1]
+            self.top_obs.alt = self.drone_position[2]
+            self.top_obs.obstacle_detected=True
+            self.avoiding_setpoint=[coords[0],coords[1],self.drone_position[2]]
+            self.current_pos_set = True
+            print("COORD SET")
+        if self.check_proximity_with_iter(self.avoiding_setpoint):
+            self.stopped_at_current_pos=True
+            print("STOP successful!")
+
 
     def get_side_point(self):
         x2=lat_to_x(self.drone_position[0])
@@ -201,8 +288,8 @@ class Obstacle():
             y3=y2
         else:
             m=(y2-y1)/(x2-x1)
-            x3 = x2 + 4 * m * math.sqrt(1/(1+(m*m)))
-            y3 = y2 - 4 * math.sqrt(1/(1+(m*m)))
+            x3 = x2 - 4 * m * math.sqrt(1/(1+(m*m)))
+            y3 = y2 + 4 * math.sqrt(1/(1+(m*m)))
         print('x3',x3)
         print('y3',y3)
         set_lat=x_to_lat(x3)
@@ -262,6 +349,7 @@ class Obstacle():
 
         if self.obstacle_detected_top:
             self.pub_msg=self.top_obs
+            print("published",self.top_obs)
         elif self.obstacle_detected_bottom:
             self.pub_msg=self.bottom_obs
         else:

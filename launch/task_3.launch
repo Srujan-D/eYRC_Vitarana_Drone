@@ -5,13 +5,13 @@
             file="$(find gazebo_ros)/launch/empty_world.launch">
             <arg name="world_name"  value="$(find vitarana_drone)/worlds/sector_task_3$(arg static).world"/>
         </include>
-        <node name="obstacle" type="Task_3_VD_2373_obstacle.py" pkg="vitarana_drone"/>
-        <node name="setpoint_control" type="Task_3_VD_2373_setpoint_control.py" pkg="vitarana_drone"/>
-        <node name="setpoint_selector" type="Task_3_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
-        <node name="position_controller" type="Task_3_VD_2373_position_controller.py" pkg="vitarana_drone"/>
-        <node name="attitude_controller" type="Task_3_VD_2373_attitude_controller.py" pkg="vitarana_drone"/>
-        <node name="marker_detect" type="Task_3_VD_2373_marker_detect.py" pkg="vitarana_drone"/>
-        <arg name="record" default="true"/>
+        <!-- <node name="obstacle" type="Task_4_VD_2373_obstacle.py" pkg="vitarana_drone"/> -->
+        <!-- <node name="setpoint_control" type="Task_4_VD_2373_setpoint_control.py" pkg="vitarana_drone"/> -->
+        <node name="setpoint_selector" type="Task_4_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
+        <!-- <node name="position_controller" type="Task_4_VD_2373_position_controller.py" pkg="vitarana_drone"/>
+        <node name="attitude_controller" type="Task_4_VD_2373_attitude_controller.py" pkg="vitarana_drone"/>
+        <node name="marker_detect" type="Task_4_VD_2373_marker_detect.py" pkg="vitarana_drone"/> -->
+        <arg name="record" default="false"/>
         <arg name="duration" default="240"/>
         <arg name="rec_name" default="Task_3_VD.bag"/>
         <group if="$(arg record)">
