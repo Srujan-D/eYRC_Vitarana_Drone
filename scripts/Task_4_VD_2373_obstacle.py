@@ -158,6 +158,23 @@ class Obstacle():
             return False
 
 
+    def check_lat_long_proximity(self,target,current=None):
+        
+        if current is None:
+            current = self.drone_position
+
+        if (
+            (
+                abs(current[0] - target[0])<= 0.000004517/4 #0.000004517
+            )
+            and (
+                abs(current[1] - target[1])<= 0.0000047487/4 #0.0000047487
+            )
+        ):  
+            return True
+        else:
+            return False
+
 
     def range_finder_top_callback(self,msg):
         # self.counter+=1
@@ -176,7 +193,7 @@ class Obstacle():
             # print(self.stray_obstacle)
             self.top_sensor_dist=msg.ranges
             print('top sensor dist is',self.top_sensor_dist)
-            if (any([self.top_sensor_dist[i]<=5 and self.top_sensor_dist[i]>=0.5 for i in range(5)])) and all(self.drone_position) :#or ((self.top_sensor_dist[3]<=25 and self.top_sensor_dist[3]>=0.5 )) :
+            if (any([self.top_sensor_dist[i]<=5 and self.top_sensor_dist[i]>=0.5 for i in range(5)])) and all(self.drone_position) and not self.check_lat_long_proximity(self.subs_setpoint):#or ((self.top_sensor_dist[3]<=25 and self.top_sensor_dist[3]>=0.5 )) :
                 print("MAY DAY!!!!")
                 print(self.top_sensor_dist)
                 # if self.stopped_at_current_pos:

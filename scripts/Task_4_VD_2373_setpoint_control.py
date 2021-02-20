@@ -17,7 +17,7 @@ import rospy
 import time,os,math
 from vitarana_drone.msg import *
 from std_msgs.msg import *
-from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import NavSatFix,LaserScan
 from vitarana_drone.srv import Gripper
 
 # util functions
@@ -59,7 +59,7 @@ class SetpointControl():
         
         self.proximity_iterations=0
         self.lat_long_proximity_iterations=0
-
+        self.bottom_sensor_dist=None
         # [19.000924871823383, 71.99983189451873, 25.6600061035167]
                     # 71.99987938144884
         # Task 1 final point
@@ -106,6 +106,7 @@ class SetpointControl():
         # ROS Subscribers
         rospy.Subscriber("/edrone/gps", NavSatFix, self.gps_callback)
         rospy.Subscriber("/edrone/center_lat_long", center_x_y, self.center_lat_long)
+        rospy.Subscriber("/edrone/range_finder_bottom",LaserScan,self.range_finder_bottom_callback)
 
         # rospy.Subscriber("/edrone/camera/image_raw", Image, self.image_callback) #Subscribing to the camera topic
 
@@ -143,7 +144,17 @@ class SetpointControl():
         except Exception as e:
             print(e)
 
+    def range_finder_bottom_callback(self,msg):
 
+        self.bottom_sensor_dist=msg.ranges[0]
+        print(self.bottom_sensor_dist)
+        # if (self.bottom_sensor_dist<=2 and not self.parcel_picked and self.drone_position[2]!=0):
+        #     self.obstacle_detected_bottom=True
+        #     self.go_up()
+
+        # else:
+        #     self.obstacle_detected_bottom=False
+        #     self.go_up_counter=0
     
     def center_lat_long(self,msg):
         # Marker detection should only work if drone near vicinity of the setpoint
@@ -175,6 +186,8 @@ class SetpointControl():
                                                 # -msg.square_size                                                 
                 marker_x_m = setpoint_x_pixel * (self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length # + 0.5# - 1 from self.delivered[-1][2] is done coz while reading, I have added 1 so as to maintain a buffer height from the marker 
                 marker_y_m = - (setpoint_y_pixel * (self.drone_position[2]-self.delivered[-1][2]-1)/self.focal_length ) #+0.25  # the "-" is dependent on yaw angle i.e. orientation of drone w.r.t. 3d world
+                # marker_x_m = setpoint_x_pixel * (self.bottom_sensor_dist-1)/self.focal_length # + 0.5# - 1 from self.delivered[-1][2] is done coz while reading, I have added 1 so as to maintain a buffer height from the marker 
+                # marker_y_m = - (setpoint_y_pixel * (self.bottom_sensor_dist-1)/self.focal_length ) #+0.25  # the "-" is dependent on yaw angle i.e. orientation of drone w.r.t. 3d world
 
                 lat_x = x_to_lat(marker_x_m + lat_to_x(self.drone_position[0]))#+9.03e-6/2 
                 long_y = y_to_long(marker_y_m + long_to_y(self.drone_position[1]))#+ 0.0000047487/2
@@ -284,13 +297,12 @@ class SetpointControl():
             self.setpoint_queue=[]
 
 
-
     def drop(self):
         print('self.delivered',self.delivered)
         print('self.setpoint_queue',self.setpoint_queue)
-        if self.instructions[0]=='DELIVERY' and abs(self.delivered[-1][2]+1-self.marker_setpoints[self.marker_point][2])<=0.05:
+        if self.instructions[0]=='DELIVERY' and( abs(self.delivered[-1][2]+1-self.marker_setpoints[self.marker_point][2])<=0.05):
             print("GOING DOWN FOR DROPPING")
-            self.marker_setpoints.insert(self.marker_point,[self.marker_setpoints[self.marker_point][0],self.marker_setpoints[self.marker_point][1],self.marker_setpoints[self.marker_point][2]-1.3+self.drone_height])
+            self.marker_setpoints.insert(self.marker_point,[self.marker_setpoints[self.marker_point][0],self.marker_setpoints[self.marker_point][1],self.marker_setpoints[self.marker_point][2]-self.bottom_sensor_dist+0.05+self.drone_height])
             self.marker_setpoints.pop(self.marker_point+1)
         # elif  self.instructions[0]=='RETURN' and abs(self.delivered[-1][2]+1-self.setpoint_queue[0][2])<=0.2:
         #     print("GOING DOWN FOR DROPPING RETURN")

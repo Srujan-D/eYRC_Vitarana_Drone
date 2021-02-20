@@ -204,11 +204,15 @@ class Edrone:
             self.target[1]=self.subscribed_target[1]
 
 
-        if ((len(self.roll_setpoint_queue)<=1 and len(self.pitch_setpoint_queue)<=1 and not self.obs) or (self.rp_queue_max_length-len(self.roll_setpoint_queue)<=1)):
+        if ((len(self.roll_setpoint_queue)<=1 and len(self.pitch_setpoint_queue)<=1 and not self.obs) or (self.rp_queue_max_length-len(self.roll_setpoint_queue)<1)):
             # More slow & stable Tuning for smaller distances
-            self.Kp = [30, 30,1000]
+            self.Kp = [18, 18,1000]
             self.Ki = [0, 0, -0.138]
             self.Kd = [500, 500, 2300]
+            # self.error=[0,0,0]
+            # self.Kp = [10, 10,1000]
+            # self.Ki = [0, 0, -0.138]
+            # self.Kd = [200, 200, 2300]
             
             print("using slow tuning")
         else:
