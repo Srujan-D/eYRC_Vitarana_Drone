@@ -48,10 +48,12 @@ class Edrone:
 
         
         # Initial settings for the values of Kp, Ki and Kd for roll, pitch and throttle
-        self.Kp = [ 65, 65, 1000]
+        # self.Kp = [ 65, 65, 1000]
+        # self.Ki = [0, 0, -0.138]
+        # self.Kd = [ 550, 550, 2300 ]       
+        self.Kp = [10*19, 10*19,1000]
         self.Ki = [0, 0, -0.138]
-        self.Kd = [ 550, 550, 2300 ]       
-
+        self.Kd = [100*15, 100*15, 2300]
 
         # -----------------------Add other required variables for pid here ----------------------------------------------
         self.target=[0,0,0]
@@ -70,12 +72,12 @@ class Edrone:
         self.rpt = [0.0, 0.0, 0.0]
 
         # self.scaling_factor=0.0000451704
-        self.min_lat_limit =  0.0000451704 * 2
-        self.min_long_limit = 0.000047487  * 2
+        self.min_lat_limit =  0.0000451704 * 1.5
+        self.min_long_limit = 0.000047487  * 1.5
         
         # minimum and maximum values for roll, pitch and throttle
-        self.min_value = [1000, 1000, 1000]
-        self.max_value = [2000, 2000, 2000]
+        self.min_value = [1375, 1375, 1000]
+        self.max_value = [1625, 1625, 2000]
 
         # Sample time in which pid is run. The stimulation step time is 50 ms
         self.sample_time = 0.060  # in seconds
@@ -206,13 +208,14 @@ class Edrone:
 
         if ((len(self.roll_setpoint_queue)<=1 and len(self.pitch_setpoint_queue)<=1 and not self.obs) or (self.rp_queue_max_length-len(self.roll_setpoint_queue)<1)):
             # More slow & stable Tuning for smaller distances
-            self.Kp = [18, 18,1000]
-            self.Ki = [0, 0, -0.138]
-            self.Kd = [500, 500, 2300]
-            # self.error=[0,0,0]
-            # self.Kp = [10, 10,1000]
+            # self.Kp = [18, 18,1000]
             # self.Ki = [0, 0, -0.138]
-            # self.Kd = [200, 200, 2300]
+            # self.Kd = [500, 500, 2300]
+            self.Kp = [10*19, 10*19,1000]
+            self.Ki = [0, 0, -0.138]
+            self.Kd = [100*15, 100*15, 2300]
+            self.min_value = [1375, 1375, 1000]
+            self.max_value = [1625, 1625, 2000]
             
             print("using slow tuning")
         else:
@@ -220,7 +223,8 @@ class Edrone:
             self.Kp = [ 70, 70, 1000]
             self.Ki = [0, 0, -0.138]
             self.Kd = [ 600, 600, 2300 ]
-
+            self.min_value = [1125, 1125, 1000]
+            self.max_value = [1875, 1875, 2000]
             print("USING FAST TUNING, max_rpq=", self.rp_queue_max_length,len(self.roll_setpoint_queue))
 
         self.check_proximity()

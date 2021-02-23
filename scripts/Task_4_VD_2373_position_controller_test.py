@@ -49,10 +49,9 @@ class Edrone:
         # self.Kp = [1000000*15, 1000000*15,1000]
         # self.Ki = [0, 0, -0.138]
         # self.Kd = [10000000*11.5, 10000000*11.5, 2300]
-        self.Kp = [1000100*8, 1000100*8,1000]
-        self.Ki = [-0.0000002, -0.0000002, -0.138]
-        #self.Kd = [100001*300, 100001*300, 2300]
-        self.Kd = [20000000, 20000000, 2300]
+        self.Kp = [1000000*17.3, 1000000*17.3,1000]
+        self.Ki = [0, 0, -0.138]
+        self.Kd = [10000000*15, 10000000*15, 2300]
 
         self.parcel_setpoints=[19.0007046575, 71.9998955286, 21]
         self.target=[0,0,0]
@@ -75,19 +74,19 @@ class Edrone:
         self.min_long_limit = 0.000047487  * 1.5
         
         # minimum and maximum values for roll, pitch and throttle
-        self.min_value = [1000, 1000, 1000]
-        self.max_value = [2000, 2000, 2000]
+        self.min_value = [1375, 1375, 1000]
+        self.max_value = [1625, 1625, 2000]
 
         # Sample time in which pid is run. The stimulation step time is 50 ms
-        self.sample_time = 0.02  # in seconds #ayush from 0.06
+        self.sample_time = 0.060  # in seconds
 
         #  ROS Publishers
         self.cmd_pub = rospy.Publisher("/drone_command", edrone_cmd, queue_size=1)
         # self.throttle_pub = rospy.Publisher("/throttle_error", Float32, queue_size=1)
-        self.roll_pub = rospy.Publisher('/roll_error', Float32, queue_size=1)
-        self.pitch_pub = rospy.Publisher('/pitch_error', Float32, queue_size=1)
+        # self.roll_pub = rospy.Publisher('/roll_error', Float32, queue_size=1)
+        # self.pitch_pub = rospy.Publisher('/pitch_error', Float32, queue_size=1)
         # self.yaw_pub = rospy.Publisher('/yaw_error', Float32, queue_size=1)
-        self.zero_pub = rospy.Publisher("/zero", Float32, queue_size=1)        
+        # self.zero_pub = rospy.Publisher("/zero", Float32, queue_size=1)        
 
         # ROS Subscribers
         rospy.Subscriber("/edrone/gps", NavSatFix, self.gps_callback)
@@ -244,7 +243,7 @@ class Edrone:
         if not select_rpt:
             print("")
             print("Target",self.target)
-            # print("Drone_pos",self.drone_position)
+            print("Drone_pos",self.drone_position)
             print("errrrrrr",self.error)
             print('roll_setpoint_queue',self.roll_setpoint_queue)
             print('pitch_setpoint_queue',self.pitch_setpoint_queue)
@@ -296,9 +295,9 @@ class Edrone:
         self.cmd_pub.publish(self.cmd_drone)
 
         # self.throttle_pub.publish(self.error[2])
-        self.roll_pub.publish(self.error[0])
-        self.pitch_pub.publish(self.error[1])
-        self.zero_pub.publish(0)
+        # self.roll_pub.publish(self.error[0])
+        # self.pitch_pub.publish(self.error[1])
+        # self.zero_pub.publish(0)
 
 
         if (self.drone_position[0]-self.last_point[0]>=0.000001) or (self.drone_position[1]-self.last_point[1]>=0.000001) or  (self.drone_position[2]-self.last_point[2]>=0.02): 
@@ -308,7 +307,8 @@ class Edrone:
 if __name__ == "__main__":
 
     e_drone = Edrone()
-    r = rospy.Rate(50)  # rate in Hz #ayush from 50
+    r = rospy.Rate(50)  # rate in Hz 
+
     while not rospy.is_shutdown():
 
         if all(e_drone.drone_position):# and not e_drone.obstacle_detected_bottom and not  e_drone.obstacle_detected_top :

@@ -37,11 +37,11 @@ def write_schedule_to_csv(scheduled_ret,scheduled_del,orig_returns,orig_deliveri
             ret = (filter(lambda orig_ret: scheduled_ret[i]['id'] == orig_ret['id'], orig_returns))
             deli = (filter(lambda orig_del: scheduled_del[i]['id'] == orig_del['id'], orig_deliveries))
 
-            writer.writerow([ret[0]['type'],"{};{};{}".format(ret[0]['from'][0],ret[0]['from'][1],ret[0]['from'][2]),ret[0]['to']])
             writer.writerow([deli[0]['type'],deli[0]['from'],"{};{};{}".format(deli[0]['to'][0],deli[0]['to'][1],deli[0]['to'][2])])
+            writer.writerow([ret[0]['type'],"{};{};{}".format(ret[0]['from'][0],ret[0]['from'][1],ret[0]['from'][2]),ret[0]['to']])
             pprint(ret)
             pprint(deli)
-        exit()
+        # exit()
             # writer.writerow(scheduled_ret)
 
     return
@@ -92,20 +92,20 @@ def get_set_point_sequence():               #for pickup attachment
 
     for delivery in deliveries:
         if delivery['from'][0] == 'A':
-            delivery['from'] = [A1[0]+delta_lat*(int(delivery['from'][1])-1) , A1[1] , A1[2]]
+            delivery['from'] = [A1[0] , A1[1]+delta_long*(int(delivery['from'][1])-1) , A1[2]]
         elif delivery['from'][0] == 'B':
-            delivery['from'] = [A1[0]+delta_lat*(int(delivery['from'][1])-1) , A1[1]+(delta_long) , A1[2]]
+            delivery['from'] = [A1[0]+(delta_lat), A1[1]+delta_long*(int(delivery['from'][1])-1) , A1[2]]
         elif delivery['from'][0] == 'C':
-            delivery['from'] = [A1[0]+delta_lat*(int(delivery['from'][1])-1) , A1[1]+2*(delta_long) , A1[2]]
+            delivery['from'] = [A1[0]+2*(delta_lat), A1[1]+delta_long*(int(delivery['from'][1])-1), A1[2]]
         delivery['from_to_dist'] = get_dist(delivery['from'],delivery['to'])
 
     for return_coord in returns:
         if return_coord['to'][0]=='X':
-            return_coord['to']=[X1[0]+delta_lat*(int(return_coord['to'][1])-1) , X1[1] , X1[2]]
+            return_coord['to']=[X1[0], X1[1]+delta_long*(int(return_coord['to'][1])-1)  , X1[2]]
         elif return_coord['to'][0]=='Y':
-            return_coord['to']=[X1[0]+delta_lat*(int(return_coord['to'][1])-1) , X1[1]+(delta_long) , X1[2]]
+            return_coord['to']=[X1[0]+(delta_lat), X1[1]+delta_long*(int(return_coord['to'][1])-1)  , X1[2]]
         elif return_coord['to'][0]=='Z':
-            return_coord['to']=[X1[0]+delta_lat*(int(return_coord['to'][1])-1) , X1[1]+2*(delta_long) , X1[2]]
+            return_coord['to']=[X1[0] +2*(delta_lat), X1[1]+delta_long*(int(return_coord['to'][1])-1) , X1[2]]
         return_coord['from_to_dist']=get_dist(return_coord['from'],return_coord['to'])
 
 
@@ -121,6 +121,7 @@ def get_set_point_sequence():               #for pickup attachment
     pprint(deliveries)
 
     scheduled_ret,scheduled_del,instructions = schedule(returns,deliveries)
+    # scheduled_ret,scheduled_del,instructions = returns,deliveries,['DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY']
 
     write_schedule_to_csv(scheduled_ret,scheduled_del,orig_returns,orig_deliveries)
 
