@@ -72,8 +72,9 @@ class Edrone:
         self.Kp = [4.2, 4.2, 400]
         self.Ki = [0.2, 0.2, 0]
         self.Kd = [4.5, 4.5, 0]
+        self.drone_position=[0,0,0]
+        self.subs_setpoint=[0,0,0]
         # -----------------------Add other required variables for pid here ----------------------------------------------
-        #
         self.throttle = 0
         self.prev_values = [0.0, 0.0, 0.0]
         self.error = [0.0, 0.0, 0.0]
@@ -83,6 +84,7 @@ class Edrone:
         self.out_roll = 0
         self.out_pitch = 0
         self.out_yaw = 0
+        self.rotateby=0
         # self.arm = 1
         # Hint : Add variables for storing previous errors in each axis, like self.prev_values = [0,0,0] where corresponds to [roll, pitch, yaw]
         #        Add variables for limiting the values like self.max_values = [1024, 1024, 1024, 1024] corresponding to [prop1, prop2, prop3, prop4]
@@ -105,6 +107,7 @@ class Edrone:
         # Subscribing to /drone_command, imu/data, /pid_tuning_roll, /pid_tuning_pitch, /pid_tuning_yaw
         rospy.Subscriber("/drone_command", edrone_cmd, self.drone_command_callback)
         rospy.Subscriber("/edrone/imu/data", Imu, self.imu_callback)
+        rospy.Subscriber("/edrone/setpoint",destination,self.setpoint_callback)
         # -------------------------Add other ROS Subscribers here----------------------------------------------------
         # rospy.Subscriber('/pid_tuning_roll', PidTune, self.roll_set_pid)
         # rospy.Subscriber('/pid_tuning_pitch', PidTune, self.pitch_set_pid)
@@ -135,8 +138,36 @@ class Edrone:
         self.setpoint_cmd[1] = msg.rcPitch
         self.setpoint_cmd[2] = msg.rcYaw
         self.setpoint_cmd[3] = msg.rcThrottle
-        # self.arm = msg.aux1
         # ---------------------------------------------------------------------------------------------------------------
+    def setpoint_callback(self,msg):
+        self.subs_setpoint=[msg.lat, msg.long, msg.alt]
+        # if msg.lat!=0 and msg.long!=0 and msg.alt!=0 and msg.obstacle_detected:
+        #     self.rotateby=0.4
+        #     print("rotating")
+        # else:
+        #     self.rotateby=0
+        #     print("not rotating")
+     
+
+    def set_yaw(self,):
+        # if self.subs_setpoint[0]-self.drone_position[0]!=0:
+        #     tan_theta=(self.subs_setpoint[1]-self.drone_position[1])/(self.subs_setpoint[0]-self.drone_position[0])
+        #     print('tan_theta',tan_theta)
+        #     theta=math.pi+math.atan(tan_theta)
+        #     print('theta',theta)
+        #     print('self.drone_orientation_euler[2]',self.drone_orientation_euler[2])
+        #     if self.drone_orientation_euler[2]>0:
+        #         self.rotateby=theta-self.drone_orientation_euler[2]
+        #     else:
+        #         self.rotateby=theta+self.drone_orientation_euler[2]
+        #     print('rotateby',self.rotateby)
+        pass
+
+
+    def gps_callback(self, msg):
+        self.drone_position[0] = msg.latitude
+        self.drone_position[1] = msg.longitude
+        self.drone_position[2] = msg.altitude
 
     # ----------------------------Define callback function like roll_set_pid to tune pitch, yaw--------------
     # def roll_set_pid(self, roll):
@@ -200,6 +231,7 @@ class Edrone:
         self.setpoint_euler[1] = (self.setpoint_cmd[1] * 0.02) - 30
         self.setpoint_euler[2] = (self.setpoint_cmd[2] * 0.02) - 30
 
+        # self.setpoint_euler[2]+=self.rotateby * (180 / math.pi)
         # Also convert the range of 1000 to 2000 to 0 to 1024 for throttle here itself
         self.throttle = (self.setpoint_cmd[3] * 1.024) - 1024
 
@@ -213,7 +245,6 @@ class Edrone:
         self.error[2] = self.setpoint_euler[2] - (
             self.drone_orientation_euler[2] * (180 / math.pi)
         )
-
         self.error_sum[0] = self.error_sum[0] + self.error[0]
         self.error_sum[1] = self.error_sum[1] + self.error[1]
         self.error_sum[2] = self.error_sum[2] + self.error[2]
@@ -239,7 +270,7 @@ class Edrone:
         self.prev_values[0] = self.error[0]
         self.prev_values[1] = self.error[1]
         self.prev_values[2] = self.error[2]
-
+        # print("YAW err:",self.error[2])
         # Giving pwm values
         self.pwm_cmd.prop1 = (
             self.throttle - self.out_roll + self.out_pitch - self.out_yaw
@@ -276,8 +307,8 @@ if __name__ == "__main__":
     #TODO: vary the publishing rate 
     r = rospy.Rate(50)  # specify rate in Hz based upon your desired PID sampling time, i.e. if desired sample time is 33ms specify rate as 30Hz
     rospy.on_shutdown(e_drone.reset)
-
     while not rospy.is_shutdown():
+        e_drone.set_yaw()
         # if self.arm == 1:
         #     e_drone.pid()
         e_drone.pid()

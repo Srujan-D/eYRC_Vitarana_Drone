@@ -34,3 +34,10 @@ self.Kd = [10000000*50, 10000000*50, 2300]
 
 for roll_Kd=10000000*50 is almost the upper bound. Above it, it never stabilizes.
     For this exact value, it takes time to stabilize at equilibruim position
+
+TASK 5 trials -- with obstacle avoidance
+self.Kp = [ 100, 100, 1000]
+self.Ki = [0, 0, -0.138]
+self.Kd = [ 600, 600, 2300 ]
+self.min_value = [1250, 1250, 1000]
+self.max_value = [1750, 1750, 2000]

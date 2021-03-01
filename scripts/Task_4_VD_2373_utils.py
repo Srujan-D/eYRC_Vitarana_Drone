@@ -50,7 +50,7 @@ def read_manifest_data():
     deliveries=[]
     returns=[]
     idx=0
-    with open('/home/atharva/catkin_ws/src/vitarana_drone/scripts/manifest.csv') as csv_file:
+    with open('/home/atharva/catkin_ws/src/vitarana_drone/scripts/original.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
             idx+=1

@@ -206,25 +206,26 @@ class Edrone:
             self.target[1]=self.subscribed_target[1]
 
 
-        if ((len(self.roll_setpoint_queue)<=1 and len(self.pitch_setpoint_queue)<=1 and not self.obs) or (self.rp_queue_max_length-len(self.roll_setpoint_queue)<1)):
+        if ((len(self.roll_setpoint_queue)<=1 and len(self.pitch_setpoint_queue)<=1 ) or (self.rp_queue_max_length-len(self.roll_setpoint_queue)<1)) and not self.obs:
             # More slow & stable Tuning for smaller distances
             # self.Kp = [18, 18,1000]
             # self.Ki = [0, 0, -0.138]
             # self.Kd = [500, 500, 2300]
-            self.Kp = [10*19, 10*19,1000]
+            self.Kp = [10*23, 10*23,1000]
             self.Ki = [0, 0, -0.138]
-            self.Kd = [100*15, 100*15, 2300]
-            self.min_value = [1375, 1375, 1000]
-            self.max_value = [1625, 1625, 2000]
-            
+            self.Kd = [100*15, 100*15, 2500]
+            self.min_value = [1350, 1350, 1000]
+            self.max_value = [1650, 1650, 2000]
             print("using slow tuning")
         else:
             # Faster better uning for larger distances            
-            self.Kp = [ 70, 70, 1000]
+            self.Kp = [ 140, 140, 1000]
             self.Ki = [0, 0, -0.138]
             self.Kd = [ 600, 600, 2300 ]
-            self.min_value = [1125, 1125, 1000]
-            self.max_value = [1875, 1875, 2000]
+            self.min_value = [1250, 1250, 1000]
+            self.max_value = [1750, 1750, 2000]
+            if self.obs:
+                print("OBSTACLE!") 
             print("USING FAST TUNING, max_rpq=", self.rp_queue_max_length,len(self.roll_setpoint_queue))
 
         self.check_proximity()

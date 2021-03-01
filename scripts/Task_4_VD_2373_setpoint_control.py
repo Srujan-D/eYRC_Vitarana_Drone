@@ -67,6 +67,8 @@ class SetpointControl():
 
         # Task 2 obs avoid testing:
         # [19.0001646575,71.9999,26.1599967919]
+        # start coord:
+        # [19.0009248718,71.9998318945,24.1600061035]
 
         # Task 3
         # start point [18.99924113805385, 71.99981954948407, 16.660023269655206]
@@ -267,7 +269,7 @@ class SetpointControl():
                 <= 0.2
             )
         ):
-            if self.proximity_iterations>=30:
+            if self.proximity_iterations>=40:
                 self.popped=False
                 self.check_gripper()
                 print("INSIDE PROXIMITY")
@@ -396,9 +398,9 @@ class SetpointControl():
                         print("GOING TO PICKUP POINT.......len=",len(self.setpoint_queue),self.setpoint_queue)
                         print("")
                         if self.parcels_coords[0][2]>self.drone_position[2]:
-                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.parcels_coords[0][2]+10]))
+                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.parcels_coords[0][2]+5]))
                         else:
-                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.drone_position[2]+10]))
+                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.drone_position[2]+5]))
                         self.add_setpoint_to_queue(list(self.parcels_coords[0]))
                         self.picked_up.append(list(self.parcels_coords[0]))
                         self.parcels_coords.pop(0)
@@ -469,7 +471,7 @@ class SetpointControl():
                     if len(self.setpoint_queue)>1 and self.check_lat_long_proximity(self.setpoint_queue[0],self.setpoint_queue[1]) and self.setpoint_queue[0][2]>self.setpoint_queue[1][2] and not self.parcel_picked:
                         print("self.picking_parcel=True")
                         if (not self.checked_return_pickup_point) and self.check_lat_long_proximity(self.setpoint_queue[0]):
-                            if (self.bottom_sensor_dist-(self.setpoint_queue[0][2]-self.setpoint_queue[1][2])>=0.31):
+                            if (self.bottom_sensor_dist-(self.setpoint_queue[0][2]-self.setpoint_queue[1][2])>=0):
                                 print("CORRECTED!")
                                 print("because",self.bottom_sensor_dist-(self.setpoint_queue[0][2]-self.setpoint_queue[1][2]))
                                 print("Added",self.drone_position[2]-self.bottom_sensor_dist+0.31)

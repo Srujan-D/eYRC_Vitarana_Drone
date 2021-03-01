@@ -177,20 +177,10 @@ class Obstacle():
 
 
     def range_finder_top_callback(self,msg):
-        # self.counter+=1
-        # for i in range(4):
-        #     if msg.ranges[i]<=0.3:
-        #         self.stray_obstacle=True
-        #         print("STRAY!!!")
-        #         break
-        #     else:
-        #         self.stray_obstacle=False
 
         if not self.avoiding:
             
             print("NOT AVOIDING")
-        # if not self.counter%3:
-            # print(self.stray_obstacle)
             self.top_sensor_dist=msg.ranges
             print('top sensor dist is',self.top_sensor_dist)
             if (any([self.top_sensor_dist[i]<=5 and self.top_sensor_dist[i]>=0.5 for i in range(5)])) and all(self.drone_position) and not self.check_lat_long_proximity(self.subs_setpoint):#or ((self.top_sensor_dist[3]<=25 and self.top_sensor_dist[3]>=0.5 )) :
@@ -305,8 +295,8 @@ class Obstacle():
             y3=y2
         else:
             m=(y2-y1)/(x2-x1)
-            x3 = x2 - 4 * m * math.sqrt(1/(1+(m*m)))
-            y3 = y2 + 4 * math.sqrt(1/(1+(m*m)))
+            x3 = x2 - 10 * m * math.sqrt(1/(1+(m*m)))
+            y3 = y2 + 10 * math.sqrt(1/(1+(m*m)))
         print('x3',x3)
         print('y3',y3)
         set_lat=x_to_lat(x3)
@@ -315,32 +305,32 @@ class Obstacle():
         return (set_lat,set_long)
         # return (19.000429913378706,72.00001)
 
-    def go_up(self):
+    # def go_up(self):
 
-        if self.go_up_counter==0:
-            self.go_up_counter+=1
-            self.go_up_setpoint=self.drone_position[2]+2.5
+    #     if self.go_up_counter==0:
+    #         self.go_up_counter+=1
+    #         self.go_up_setpoint=self.drone_position[2]+2.5
 
-                                # disable go_up while intentionally landing
-        if self.drone_position[0]!=0 :
+    #                             # disable go_up while intentionally landing
+    #     if self.drone_position[0]!=0 :
 
-            self.bottom_obs.lat=self.drone_position[0]
-            self.bottom_obs.long=self.drone_position[1]
-            self.bottom_obs.alt=self.go_up_setpoint
-            self.bottom_obs.obstacle_detected=True
+    #         self.bottom_obs.lat=self.drone_position[0]
+    #         self.bottom_obs.long=self.drone_position[1]
+    #         self.bottom_obs.alt=self.go_up_setpoint
+    #         self.bottom_obs.obstacle_detected=True
             
-            print("go up")
+    #         print("go up")
 
 
-    def go_left(self):
-        pub_msg=destination()
-        if self.drone_position[0]!=0:
-            side_point=self.get_side_point()
-            pub_msg.lat = side_point[0]
-            pub_msg.long = side_point[1]
-            pub_msg.alt = self.drone_position[2]
-            pub_msg.obstacle_detected = True
-            self.setpoint_pub.publish(pub_msg)
+    # def go_left(self):
+    #     pub_msg=destination()
+    #     if self.drone_position[0]!=0:
+    #         side_point=self.get_side_point()
+    #         pub_msg.lat = side_point[0]
+    #         pub_msg.long = side_point[1]
+    #         pub_msg.alt = self.drone_position[2]
+    #         pub_msg.obstacle_detected = True
+    #         self.setpoint_pub.publish(pub_msg)
 
 
     def stop(self):

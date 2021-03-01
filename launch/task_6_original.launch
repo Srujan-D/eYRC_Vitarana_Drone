@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+	<arg name="static" default=""/>
+        <include 
+            file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="world_name"  value="$(find vitarana_drone)/worlds/task_6_original$(arg static).world"/>
+        </include>
+	    <node name="throttler_model_states" type="throttle" pkg="topic_tools" args="messages /gazebo/model_states 3"/>
+	    <node name="throttler_gps" type="throttle" pkg="topic_tools" args="messages /edrone/gps 3"/>
+	    <node name="gripper_service" type="gripper_service.py" pkg="vitarana_drone"/>
+        <node name="setpoint_selector" type="Task_4_VD_2373_setpoint_selector.py" pkg="vitarana_drone"/>
+
+</launch>
