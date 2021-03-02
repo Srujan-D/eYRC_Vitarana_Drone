@@ -62,14 +62,11 @@ def get_schedule_from_pairs(sorted_pairs,remainder_del_rets=None):
 def schedule(rets,dels):
     rets_dist_from_dels=calc_ret_del_distances(rets,dels)
     rets_dist_from_dels=np.array(rets_dist_from_dels)
-    # rets_dist_from_dels_copy=np.array(rets_dist_from_dels)
 
-    # pprint(rets_dist_from_dels)
     pairs = []
     pair_id = 1
     print(rets_dist_from_dels.shape)
-    while rets_dist_from_dels.shape[0]!=1 and rets_dist_from_dels.shape[0]!=1:
-        print("")
+    while rets_dist_from_dels.shape[0]!=1 and rets_dist_from_dels.shape[1]!=1:
         # Find global min distance minimum in rets_dist_from_dels
 
         min_dist_index=np.argwhere(rets_dist_from_dels == np.min(rets_dist_from_dels))
@@ -88,11 +85,9 @@ def schedule(rets,dels):
         del dels[min_dist_index[0][1]]
 
         # Repeat untill all are paired
-        pprint(rets_dist_from_dels)
-        print("")
 
-    #TODO: change this to generalise 
-    if rets_dist_from_dels.shape[0]==1 and rets_dist_from_dels.shape[0]==1:
+
+    if rets_dist_from_dels.shape[0]==1 or rets_dist_from_dels.shape[1]==1:
         pairs.append({'ret':rets[0],'del':dels[0]})
         print("VERIFIED DIST: ", get_dist(pairs[-1]['ret']['from'],pairs[-1]['del']['to']))
         
@@ -108,15 +103,24 @@ def schedule(rets,dels):
     # tot_dist_covered=
     print("")
     print("FINAL")
-    sorted_pairs=sorted(pairs,key=lambda i: (get_dist(i['ret']['from'],i['ret']['to'])+get_dist(i['del']['from'],i['del']['to'])+get_dist(i['ret']['from'],i['del']['to'])))
-    # dist=[]    
-    # for i in sorted_pairs:
-    #     dist.append(get_dist(i['ret']['from'],i['ret']['to'])+get_dist(i['del']['from'],i['del']['to'])+get_dist(i['ret']['from'],i['del']['to']))
-    #     print(dist[-1])
-    # TODO: 
-    # If there are left out returns/ deliveries , insert these in above sorted list based on the total distance i.e. 2*ri / 2*dj
 
-    # print(sum(dist))
-    scheduled_ret,scheduled_del,instructions=get_schedule_from_pairs(sorted_pairs)
+    # nearest ones first:
+    # sorted_pairs=sorted(pairs,reverse=True,key=lambda i: (get_dist(i['ret']['from'],i['ret']['to'])+get_dist(i['del']['from'],i['del']['to'])+get_dist(i['ret']['from'],i['del']['to'])))
     
+    #farthest ones first
+    # sorted_pairs=sorted(pairs,reverse=True,key=lambda i: (get_dist(i['ret']['from'],i['ret']['to'])+get_dist(i['del']['from'],i['del']['to'])+get_dist(i['ret']['from'],i['del']['to'])))
+    
+    #farthest ones with higher cost first -- increases middle timings, thus not ideal
+    # sorted_pairs=sorted(pairs,reverse=True,key=lambda i: (get_dist(i['ret']['from'],i['ret']['to'])+get_dist(i['del']['from'],i['del']['to'])))
+    
+    #Penalise those orders with high intermediate distance 
+    sorted_pairs=sorted(pairs,key=lambda i: (get_dist(i['ret']['from'],i['del']['to'])/(get_dist(i['ret']['from'],i['ret']['to'])+get_dist(i['del']['from'],i['del']['to']))))
+    
+    dist=[]    
+    for i in sorted_pairs:
+        dist.append(get_dist(i['ret']['from'],i['ret']['to'])+get_dist(i['del']['from'],i['del']['to']))
+        print('dist:',dist[-1])
+    print(sum(dist))
+
+    scheduled_ret,scheduled_del,instructions=get_schedule_from_pairs(sorted_pairs)            
     return scheduled_ret,scheduled_del,instructions

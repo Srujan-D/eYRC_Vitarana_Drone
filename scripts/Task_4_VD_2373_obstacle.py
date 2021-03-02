@@ -15,6 +15,7 @@ This node publishes and subsribes the following topics:
 import rospy
 import math
 import time
+import tf
 from vitarana_drone.msg import *
 from sensor_msgs.msg import Imu, NavSatFix,LaserScan
 from vitarana_drone.srv import Gripper
@@ -55,6 +56,8 @@ class Obstacle():
         self.top_obs=destination()
         self.bottom_obs=destination()
         self.subs_setpoint=[0,0,0]
+        self.drone_orientation_quaternion=[0,0,0,0]
+        self.drone_orientation_euler=[0,0,0]
         # Publishers
         # self.cmd_pub = rospy.Publisher("/edrone/setpoint", destination, queue_size=1)
         self.setpoint_pub = rospy.Publisher("/edrone/obstacle_setpoint", destination, queue_size=2)
@@ -65,7 +68,8 @@ class Obstacle():
         # rospy.Subscriber("/edrone/range_finder_bottom",LaserScan,self.range_finder_bottom_callback)
         rospy.Subscriber("/edrone/gps", NavSatFix, self.gps_callback)
         rospy.Subscriber("/edrone/setpoint",destination,self.setpoint_callback)
-        
+        rospy.Subscriber("/edrone/imu/data", Imu, self.imu_callback)
+
         # Services
         self.gripper = rospy.ServiceProxy('/edrone/activate_gripper',Gripper())
 
@@ -75,7 +79,26 @@ class Obstacle():
         self.drone_position[1] = msg.longitude
         self.drone_position[2] = msg.altitude
 
+    def imu_callback(self, msg):
 
+        self.drone_orientation_quaternion[0] = msg.orientation.x
+        self.drone_orientation_quaternion[1] = msg.orientation.y
+        self.drone_orientation_quaternion[2] = msg.orientation.z
+        self.drone_orientation_quaternion[3] = msg.orientation.w
+
+        (
+            self.drone_orientation_euler[1],
+            self.drone_orientation_euler[0],
+            self.drone_orientation_euler[2],
+        ) = tf.transformations.euler_from_quaternion(
+            [
+                self.drone_orientation_quaternion[0],
+                self.drone_orientation_quaternion[1],
+                self.drone_orientation_quaternion[2],
+                self.drone_orientation_quaternion[3],
+            ]
+        )
+    
     def setpoint_callback(self,msg):
         self.subs_setpoint[0]=msg.lat
         self.subs_setpoint[1]=msg.long
@@ -165,10 +188,10 @@ class Obstacle():
 
         if (
             (
-                abs(current[0] - target[0])<= 0.000004517/4 #0.000004517
+                abs(current[0] - target[0])<= 0.000004517*5 #0.000004517
             )
             and (
-                abs(current[1] - target[1])<= 0.0000047487/4 #0.0000047487
+                abs(current[1] - target[1])<= 0.0000047487*5 #0.0000047487
             )
         ):  
             return True
@@ -178,23 +201,51 @@ class Obstacle():
 
     def range_finder_top_callback(self,msg):
 
+        print('self.drone_orientation_euler[2]',self.drone_orientation_euler[2])
         if not self.avoiding:
             
             print("NOT AVOIDING")
             self.top_sensor_dist=msg.ranges
             print('top sensor dist is',self.top_sensor_dist)
-            if (any([self.top_sensor_dist[i]<=5 and self.top_sensor_dist[i]>=0.5 for i in range(5)])) and all(self.drone_position) and not self.check_lat_long_proximity(self.subs_setpoint):#or ((self.top_sensor_dist[3]<=25 and self.top_sensor_dist[3]>=0.5 )) :
-                print("MAY DAY!!!!")
+            if (any([self.top_sensor_dist[i]<=10 and self.top_sensor_dist[i]>=0.5 for i in range(5)])) and all(self.drone_position) and not self.check_lat_long_proximity(self.subs_setpoint):#or ((self.top_sensor_dist[3]<=25 and self.top_sensor_dist[3]>=0.5 )) :
                 print(self.top_sensor_dist)
-                # if self.stopped_at_current_pos:
-                self.stop()
-                print("STOP")
-                    # self.current_pos_set=False
-                # else:
-                    # print("STOP at current pos")
-                    # self.stop_at_current_pos()
-                self.avoiding=True
-                self.obstacle_detected_top=True
+                
+                #Checking if the obstacle is in the direction of motion
+                if self.subs_setpoint[0]-self.drone_position[0]!=0:
+                    print(self.subs_setpoint)
+                    tan_theta=(self.subs_setpoint[1]-self.drone_position[1])/(self.subs_setpoint[0]-self.drone_position[0])
+                    print('tan_theta',tan_theta)
+                    theta=math.atan(tan_theta)
+                else:
+                    theta=9999999
+                if abs(theta)>=2.3:
+                    k=2
+                    print("k=",k)
+                elif theta<-1.3 and theta>-2.3:
+                    k=1
+                    print("k=",k)
+                elif abs(theta)<=0.78:
+                    k=0
+                    print("k=",k)
+                elif theta>0.78 and theta<2.3:
+                    k=3
+                    print("k=",k)
+                else:
+                    k='None'
+                print('theta, k:',theta,k)
+
+                if k=='None' or self.top_sensor_dist[k]<=10 and self.top_sensor_dist[k]>=0.45:
+                    print("MAY DAY!!!!")
+                    print(self.top_sensor_dist)
+                    # if self.stopped_at_current_pos:
+                    self.stop()
+                    print("STOP")
+                        # self.current_pos_set=False
+                    # else:
+                        # print("STOP at current pos")
+                        # self.stop_at_current_pos()
+                    self.avoiding=True
+                    self.obstacle_detected_top=True
                 
             else:
                 self.obstacle_detected_top=False
@@ -295,8 +346,8 @@ class Obstacle():
             y3=y2
         else:
             m=(y2-y1)/(x2-x1)
-            x3 = x2 - 10 * m * math.sqrt(1/(1+(m*m)))
-            y3 = y2 + 10 * math.sqrt(1/(1+(m*m)))
+            x3 = x2 - 4 * m * math.sqrt(1/(1+(m*m)))
+            y3 = y2 + 4 * math.sqrt(1/(1+(m*m)))
         print('x3',x3)
         print('y3',y3)
         set_lat=x_to_lat(x3)

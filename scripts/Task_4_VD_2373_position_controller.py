@@ -211,7 +211,7 @@ class Edrone:
             # self.Kp = [18, 18,1000]
             # self.Ki = [0, 0, -0.138]
             # self.Kd = [500, 500, 2300]
-            self.Kp = [10*23, 10*23,1000]
+            self.Kp = [10*21, 10*21,1000]
             self.Ki = [0, 0, -0.138]
             self.Kd = [100*15, 100*15, 2500]
             self.min_value = [1350, 1350, 1000]
@@ -222,8 +222,8 @@ class Edrone:
             self.Kp = [ 140, 140, 1000]
             self.Ki = [0, 0, -0.138]
             self.Kd = [ 600, 600, 2300 ]
-            self.min_value = [1250, 1250, 1000]
-            self.max_value = [1750, 1750, 2000]
+            self.min_value = [1300, 1300, 1000]
+            self.max_value = [1700, 1700, 2000]
             if self.obs:
                 print("OBSTACLE!") 
             print("USING FAST TUNING, max_rpq=", self.rp_queue_max_length,len(self.roll_setpoint_queue))

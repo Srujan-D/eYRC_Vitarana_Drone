@@ -33,12 +33,13 @@ def write_schedule_to_csv(scheduled_ret,scheduled_del,orig_returns,orig_deliveri
     print(orig_returns)
     with open('/home/atharva/catkin_ws/src/vitarana_drone/scripts/sequenced_manifest.csv','w') as fhand:
         writer = csv.writer(fhand)
-        for i in range(len(scheduled_ret)):
-            ret = (filter(lambda orig_ret: scheduled_ret[i]['id'] == orig_ret['id'], orig_returns))
-            deli = (filter(lambda orig_del: scheduled_del[i]['id'] == orig_del['id'], orig_deliveries))
-
-            writer.writerow([deli[0]['type'],deli[0]['from'],"{};{};{}".format(deli[0]['to'][0],deli[0]['to'][1],deli[0]['to'][2])])
-            writer.writerow([ret[0]['type'],"{};{};{}".format(ret[0]['from'][0],ret[0]['from'][1],ret[0]['from'][2]),ret[0]['to']])
+        for i in range(max(len(scheduled_ret),len(scheduled_del))):
+            if i<len(scheduled_del):
+                deli = (filter(lambda orig_del: scheduled_del[i]['id'] == orig_del['id'], orig_deliveries))
+                writer.writerow([deli[0]['type'],deli[0]['from'],"{};{};{}".format(deli[0]['to'][0],deli[0]['to'][1],deli[0]['to'][2])])
+            if i<len(scheduled_ret):
+                ret = (filter(lambda orig_ret: scheduled_ret[i]['id'] == orig_ret['id'], orig_returns))
+                writer.writerow([ret[0]['type'],"{};{};{}".format(ret[0]['from'][0],ret[0]['from'][1],ret[0]['from'][2]),ret[0]['to']])
             pprint(ret)
             pprint(deli)
         # exit()
@@ -109,19 +110,27 @@ def get_set_point_sequence():               #for pickup attachment
         return_coord['from_to_dist']=get_dist(return_coord['from'],return_coord['to'])
 
 
-    print("")
-    print("before:")
-    print("")
     parcels_delivery_coords=[]
     parcels_coords=[]
 
     returns=sorted(returns, key = lambda i: i['from_to_dist'])
     deliveries=sorted(deliveries, key = lambda i: i['from_to_dist'])
-    pprint(returns)
-    pprint(deliveries)
 
     scheduled_ret,scheduled_del,instructions = schedule(returns,deliveries)
     # scheduled_ret,scheduled_del,instructions = returns,deliveries,['DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY']
+    for re in returns:
+        scheduled_ret.append(re)
+        print("")
+        print("ADDED ret:",re)
+        print("")
+        del re
+    for deli in deliveries:
+        scheduled_del.append(deli)
+        print("")
+        print("ADDED del:",deli)
+        print("")
+        del deli
+
 
     write_schedule_to_csv(scheduled_ret,scheduled_del,orig_returns,orig_deliveries)
 
@@ -136,14 +145,13 @@ def get_set_point_sequence():               #for pickup attachment
     #         deli['to'][i]-=start_coords[i]
     #         deli['from'][i]-=start_coords[i]
 
-    # TODO:remove this hard coded stuff
-    # instructions=['DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY']
-
-    for delivery in scheduled_del:
-        parcels_coords.append(delivery['from'])
-        parcels_delivery_coords.append(delivery['to'])
-        parcels_coords.append(scheduled_ret[scheduled_del.index(delivery)]['from'])
-        parcels_delivery_coords.append(scheduled_ret[scheduled_del.index(delivery)]['to'])
+    for i in range(max(len(scheduled_del),len(scheduled_ret))):
+        if i<len(scheduled_del):
+            parcels_coords.append(scheduled_del[i]['from'])
+            parcels_delivery_coords.append(scheduled_del[i]['to'])
+        if i<len(scheduled_ret):
+            parcels_coords.append(scheduled_ret[i]['from'])
+            parcels_delivery_coords.append(scheduled_ret[i]['to'])
 
     pprint(parcels_coords)
     pprint(parcels_delivery_coords)

@@ -62,5 +62,5 @@ if __name__ == "__main__":
                 test.drone_orientation_quaternion[3],
             ]
         )
-        print(test.drone_orientation_euler[2])
+        print(test.drone_orientation_euler)
         r.sleep()

@@ -398,9 +398,9 @@ class SetpointControl():
                         print("GOING TO PICKUP POINT.......len=",len(self.setpoint_queue),self.setpoint_queue)
                         print("")
                         if self.parcels_coords[0][2]>self.drone_position[2]:
-                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.parcels_coords[0][2]+5]))
+                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.parcels_coords[0][2]+8]))
                         else:
-                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.drone_position[2]+5]))
+                            self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.drone_position[2]+8]))
                         self.add_setpoint_to_queue(list(self.parcels_coords[0]))
                         self.picked_up.append(list(self.parcels_coords[0]))
                         self.parcels_coords.pop(0)
@@ -417,10 +417,10 @@ class SetpointControl():
                     print("GOING TO DELIVERY POINT")
                     if self.parcels_delivery_coords[0][2]>self.drone_position[2]:
                         print("deliver to higher coord")
-                        self.add_setpoint_to_queue(list([self.parcels_delivery_coords[0][0],self.parcels_delivery_coords[0][1],self.parcels_delivery_coords[0][2]+10]))
+                        self.add_setpoint_to_queue(list([self.parcels_delivery_coords[0][0],self.parcels_delivery_coords[0][1],self.parcels_delivery_coords[0][2]+8]))
                     else:
                         print("deliver to lower coord")
-                        self.add_setpoint_to_queue(list([self.parcels_delivery_coords[0][0],self.parcels_delivery_coords[0][1],self.drone_position[2]+10]))
+                        self.add_setpoint_to_queue(list([self.parcels_delivery_coords[0][0],self.parcels_delivery_coords[0][1],self.drone_position[2]+8]))
                     self.add_setpoint_to_queue(list(self.parcels_delivery_coords[0]))
                     self.delivered.append(list(self.parcels_delivery_coords[0]))
                     self.parcels_delivery_coords.pop(0)
