@@ -72,8 +72,8 @@ class Edrone:
         self.rpt = [0.0, 0.0, 0.0]
 
         # self.scaling_factor=0.0000451704
-        self.min_lat_limit =  0.0000451704 * 1.5
-        self.min_long_limit = 0.000047487  * 1.5
+        self.min_lat_limit =  0.0000451704 * 1.8
+        self.min_long_limit = 0.000047487  * 1.8
         
         # minimum and maximum values for roll, pitch and throttle
         self.min_value = [1375, 1375, 1000]
@@ -87,18 +87,15 @@ class Edrone:
         #  ROS Publishers
         self.cmd_pub = rospy.Publisher("/drone_command", edrone_cmd, queue_size=1)
         # self.throttle_pub = rospy.Publisher("/throttle_error", Float32, queue_size=1)
-        self.roll_pub = rospy.Publisher('/roll_error', Float32, queue_size=1)
-        self.pitch_pub = rospy.Publisher('/pitch_error', Float32, queue_size=1)
-        self.yaw_pub = rospy.Publisher('/yaw_error', Float32, queue_size=1)
-        self.zero_pub = rospy.Publisher("/zero", Float32, queue_size=1)        
+        # self.roll_pub = rospy.Publisher('/roll_error', Float32, queue_size=1)
+        # self.pitch_pub = rospy.Publisher('/pitch_error', Float32, queue_size=1)
+        # self.yaw_pub = rospy.Publisher('/yaw_error', Float32, queue_size=1)
+        # self.zero_pub = rospy.Publisher("/zero", Float32, queue_size=1)        
 
         # ROS Subscribers
         rospy.Subscriber("/edrone/gps", NavSatFix, self.gps_callback)
         rospy.Subscriber("/edrone/setpoint",destination,self.setpoint_callback)
         # rospy.Subscriber("/edrone/range_finder_top",LaserScan,self.range_finder_top_callback)
-
-        # ROS Services 
-        # rospy.wait_for_service('/edrone/activate_gripper')
 
         # ------------------------------------------------------------------------------------------------------------
 
@@ -106,13 +103,6 @@ class Edrone:
             self.drone_position[0] = msg.latitude
             self.drone_position[1] = msg.longitude
             self.drone_position[2] = msg.altitude
-
-    # def range_finder_top_callback(self,msg):
-    #     if any((dist<=25 and dist>0.5) for dist in msg.ranges):
-    #         self.obs_tuning=True
-    #         print()
-    #     else:
-    #         self.obs_tuning=False
 
     def setpoint_callback(self,msg):
         if msg.lat!=0 and msg.long!=0 and msg.alt!=0 and all(self.drone_position):
@@ -206,7 +196,7 @@ class Edrone:
             self.target[1]=self.subscribed_target[1]
 
 
-        if ((len(self.roll_setpoint_queue)<=1 and len(self.pitch_setpoint_queue)<=1 ) or (self.rp_queue_max_length-len(self.roll_setpoint_queue)<1)) and not self.obs:
+        if ((len(self.roll_setpoint_queue)<=1 and len(self.pitch_setpoint_queue)<=1 ) or (self.rp_queue_max_length-len(self.roll_setpoint_queue)<1)) or self.obs:
             # More slow & stable Tuning for smaller distances
             # self.Kp = [18, 18,1000]
             # self.Ki = [0, 0, -0.138]
@@ -214,16 +204,16 @@ class Edrone:
             self.Kp = [10*21, 10*21,1000]
             self.Ki = [0, 0, -0.138]
             self.Kd = [100*15, 100*15, 2500]
-            self.min_value = [1350, 1350, 1000]
-            self.max_value = [1650, 1650, 2000]
+            self.min_value = [1275, 1275, 1000]
+            self.max_value = [1725, 1725, 2000]
             print("using slow tuning")
         else:
             # Faster better uning for larger distances            
-            self.Kp = [ 140, 140, 1000]
+            self.Kp = [ 175, 175, 1000]
             self.Ki = [0, 0, -0.138]
             self.Kd = [ 600, 600, 2300 ]
-            self.min_value = [1300, 1300, 1000]
-            self.max_value = [1700, 1700, 2000]
+            self.min_value = [1275, 1275, 1000]
+            self.max_value = [1725, 1725, 2000]
             if self.obs:
                 print("OBSTACLE!") 
             print("USING FAST TUNING, max_rpq=", self.rp_queue_max_length,len(self.roll_setpoint_queue))
@@ -292,9 +282,9 @@ class Edrone:
         self.cmd_pub.publish(self.cmd_drone)
 
         # self.throttle_pub.publish(self.error[2])
-        self.roll_pub.publish(self.error[0])
-        self.pitch_pub.publish(self.error[1])
-        self.zero_pub.publish(0)
+        # self.roll_pub.publish(self.error[0])
+        # self.pitch_pub.publish(self.error[1])
+        # self.zero_pub.publish(0)
 
 
         if (self.drone_position[0]-self.last_point[0]>=0.000001) or (self.drone_position[1]-self.last_point[1]>=0.000001) or  (self.drone_position[2]-self.last_point[2]>=0.02): 

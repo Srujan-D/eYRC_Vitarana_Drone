@@ -204,7 +204,7 @@ class Obstacle():
         print('self.drone_orientation_euler[2]',self.drone_orientation_euler[2])
         if not self.avoiding:
             
-            print("NOT AVOIDING")
+            # print("NOT AVOIDING")
             self.top_sensor_dist=msg.ranges
             print('top sensor dist is',self.top_sensor_dist)
             if (any([self.top_sensor_dist[i]<=10 and self.top_sensor_dist[i]>=0.5 for i in range(5)])) and all(self.drone_position) and not self.check_lat_long_proximity(self.subs_setpoint):#or ((self.top_sensor_dist[3]<=25 and self.top_sensor_dist[3]>=0.5 )) :
@@ -237,21 +237,13 @@ class Obstacle():
                 if k=='None' or self.top_sensor_dist[k]<=10 and self.top_sensor_dist[k]>=0.45:
                     print("MAY DAY!!!!")
                     print(self.top_sensor_dist)
-                    # if self.stopped_at_current_pos:
                     self.stop()
                     print("STOP")
-                        # self.current_pos_set=False
-                    # else:
-                        # print("STOP at current pos")
-                        # self.stop_at_current_pos()
                     self.avoiding=True
                     self.obstacle_detected_top=True
                 
             else:
                 self.obstacle_detected_top=False
-                # if not self.obs_detected():
-                #     pub_msg=destination()
-                #     self.setpoint_pub.publish(pub_msg
         
         else:
             print("AVOIDING")
@@ -355,33 +347,6 @@ class Obstacle():
         
         return (set_lat,set_long)
         # return (19.000429913378706,72.00001)
-
-    # def go_up(self):
-
-    #     if self.go_up_counter==0:
-    #         self.go_up_counter+=1
-    #         self.go_up_setpoint=self.drone_position[2]+2.5
-
-    #                             # disable go_up while intentionally landing
-    #     if self.drone_position[0]!=0 :
-
-    #         self.bottom_obs.lat=self.drone_position[0]
-    #         self.bottom_obs.long=self.drone_position[1]
-    #         self.bottom_obs.alt=self.go_up_setpoint
-    #         self.bottom_obs.obstacle_detected=True
-            
-    #         print("go up")
-
-
-    # def go_left(self):
-    #     pub_msg=destination()
-    #     if self.drone_position[0]!=0:
-    #         side_point=self.get_side_point()
-    #         pub_msg.lat = side_point[0]
-    #         pub_msg.long = side_point[1]
-    #         pub_msg.alt = self.drone_position[2]
-    #         pub_msg.obstacle_detected = True
-    #         self.setpoint_pub.publish(pub_msg)
 
 
     def stop(self):

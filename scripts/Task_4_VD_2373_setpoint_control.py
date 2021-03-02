@@ -272,9 +272,6 @@ class SetpointControl():
             if self.proximity_iterations>=40:
                 self.popped=False
                 self.check_gripper()
-                print("INSIDE PROXIMITY")
-                print('self.target',target)
-                print('self.dronepos',current)
                 self.proximity_iterations=0
                 return True
             else:
@@ -283,6 +280,7 @@ class SetpointControl():
         else:
             self.iterations = 0
             return False
+
 
     def check_proximity(self,target,current=None):
         
@@ -302,20 +300,9 @@ class SetpointControl():
                 abs(current[2] - target[2])
                 <= 0.2
             )
-        ):
-            # if self.proximity_iterations>=60:
-                # self.popped=False
-            # self.check_gripper()
-            print("INSIDE PROXIMITY")
-            print('self.target',target)
-            print('self.dronepos',current)
-                # self.proximity_iterations=0
+        ):           
             return True
-            # else:
-                # self.proximity_iterations+=1
-                # return False
         else:
-            # self.iterations = 0
             return False
 
     def leave_parcel(self):
@@ -387,9 +374,6 @@ class SetpointControl():
 
     def check_setpoint_queue(self):
         try:
-
-            print(len(self.setpoint_queue),self.setpoint_queue)
-            
             if len(self.setpoint_queue)==0 or self.check_proximity(self.setpoint_queue[0]):
                 # GOING TO PICKUP POINT
                 if not self.parcel_picked and len(self.parcels_coords)>0:
@@ -398,8 +382,10 @@ class SetpointControl():
                         print("GOING TO PICKUP POINT.......len=",len(self.setpoint_queue),self.setpoint_queue)
                         print("")
                         if self.parcels_coords[0][2]>self.drone_position[2]:
+                            self.add_setpoint_to_queue(list([self.drone_position[0],self.drone_position[1],self.parcels_coords[0][2]+8]))
                             self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.parcels_coords[0][2]+8]))
                         else:
+                            self.add_setpoint_to_queue(list([self.drone_position[0],self.drone_position[1],self.drone_position[2]+8]))
                             self.add_setpoint_to_queue(list([self.parcels_coords[0][0],self.parcels_coords[0][1],self.drone_position[2]+8]))
                         self.add_setpoint_to_queue(list(self.parcels_coords[0]))
                         self.picked_up.append(list(self.parcels_coords[0]))
@@ -417,9 +403,11 @@ class SetpointControl():
                     print("GOING TO DELIVERY POINT")
                     if self.parcels_delivery_coords[0][2]>self.drone_position[2]:
                         print("deliver to higher coord")
+                        self.add_setpoint_to_queue(list([self.drone_position[0],self.drone_position[1],self.parcels_delivery_coords[0][2]+8]))
                         self.add_setpoint_to_queue(list([self.parcels_delivery_coords[0][0],self.parcels_delivery_coords[0][1],self.parcels_delivery_coords[0][2]+8]))
                     else:
                         print("deliver to lower coord")
+                        self.add_setpoint_to_queue(list([self.drone_position[0],self.drone_position[1],self.drone_position[2]+8]))
                         self.add_setpoint_to_queue(list([self.parcels_delivery_coords[0][0],self.parcels_delivery_coords[0][1],self.drone_position[2]+8]))
                     self.add_setpoint_to_queue(list(self.parcels_delivery_coords[0]))
                     self.delivered.append(list(self.parcels_delivery_coords[0]))
@@ -429,25 +417,6 @@ class SetpointControl():
                 else:
                     print("Wandering",self.setpoint_queue)
                     print("SELF.PICKING",self.picking_parcel)
-
-            # if len(self.setpoint_queue)>0 and self.check_proximity_with_iter(self.setpoint):
-            #     if self.drone_position[2]>self.setpoint[2]:
-            #         self.setpoint_queue.insert(0,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.drone_position[2]])
-            #     else:
-            # #         self.setpoint_queue.insert(0,[self.drone_position[0],self.drone_position[1],self.setpoint_queue[1][2]])
-            
-            
-            
-            # if (not self.checked_return_pickup_point) and len(self.setpoint_queue)>1 and self.check_lat_long_proximity(self.setpoint_queue[0]) and self.check_lat_long_proximity(self.setpoint_queue[0],self.setpoint_queue[1]) and not self.parcel_picked:
-            #     if (self.bottom_sensor_dist-(self.setpoint_queue[0][2]-self.setpoint_queue[1][2])>=0.31):
-            #         print("CORRECTED!")
-            #         print("because",self.setpoint_queue)
-            #         print("Added",self.bottom_sensor_dist)
-            #         print("instead of ", self.setpoint_queue[1][2])
-            #         self.setpoint_queue[1][2]= self.drone_position[2]-self.bottom_sensor_dist+0.31
-            #     else:
-            #         print("ALMOST THERE")
-            #     self.checked_return_pickup_point= True
 
 
             if len(self.setpoint_queue)>0 and self.check_proximity_with_iter(self.setpoint_queue[0]):
@@ -461,11 +430,7 @@ class SetpointControl():
                         self.setpoint_queue.insert(0,[self.drone_position[0],self.drone_position[1],self.setpoint_queue[1][2]])
 
                     self.last_spq_popped=self.setpoint_queue.pop(1)
-                    # self.setpoint=list(self.setpoint_queue[0])
-                    # return
-                    # print("Going to",self.setpoint_queue)
-                    # elif len(self.setpoint_queue)==0:
-                    #     print("reached")
+
                 elif not self.picking_parcel :
                     print("CHECKING DEFAULT POP")
                     if len(self.setpoint_queue)>1 and self.check_lat_long_proximity(self.setpoint_queue[0],self.setpoint_queue[1]) and self.setpoint_queue[0][2]>self.setpoint_queue[1][2] and not self.parcel_picked:
@@ -483,7 +448,7 @@ class SetpointControl():
 
                             
                         if (self.setpoint_queue[0][2]-self.setpoint_queue[1][2])>3:
-                            self.setpoint_queue.insert(1,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.setpoint_queue[0][2]-3])
+                            self.setpoint_queue.insert(1,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.setpoint_queue[0][2]-7])
                         else:
                             self.picking_parcel=True
                     else:
@@ -493,13 +458,8 @@ class SetpointControl():
                         print("Default checkpoint reached popping")
                         self.last_spq_popped=self.setpoint_queue.pop(0)
                         print("Updated spq",self.setpoint_queue)
-                # elif self.picking_parcel:
-                #     print("TRYING TO PICKUP!!!!!!!")
-
-
 
             try:
-                print(self.instructions)
                 if self.parcel_picked and self.check_lat_long_proximity(self.delivered[-1]) and not self.go_to_marker and self.instructions[0]=='DELIVERY':
                     print("SEARCHING MARKER")
                     self.search_delivery_marker()
@@ -509,7 +469,7 @@ class SetpointControl():
                 elif self.parcel_picked and self.check_lat_long_proximity(self.delivered[-1]) and not self.go_to_marker and self.instructions[0]=='RETURN':
                     print("Going down for returning")
                     if self.check_proximity_with_iter(self.last_spq_popped):
-                        self.setpoint_queue.insert(0,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.setpoint_queue[0][2]-3])
+                        self.setpoint_queue.insert(0,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.setpoint_queue[0][2]-7])
 
             except Exception as e:
                 print("SEARCHING MARKER ERROR",e)
@@ -542,6 +502,9 @@ class SetpointControl():
             
 
     def add_setpoint_to_queue(self, setpoint):
+        if len(self.setpoint_queue):
+            if abs(self.setpoint_queue[-1][2]-setpoint[2])>0.1:
+                self.setpoint_queue.append(list(setpoint))
         print("ADDED", setpoint)
         self.setpoint_queue.append(list(setpoint))
         return
@@ -549,18 +512,14 @@ class SetpointControl():
 
     def setpoint_control(self):
         
-        print("")
-        print(time.strftime("%H:%M:%S"))
-        print("")
         pub_msg=destination()
         if self.go_to_marker and len(self.marker_setpoints)>0:
-            print("Going to marker")
             self.check_marker_queue()
             pub_msg.lat=self.marker_setpoints[self.marker_point][0]
             pub_msg.long=self.marker_setpoints[self.marker_point][1]
             pub_msg.alt=self.marker_setpoints[self.marker_point][2]
-            print("marker sp",self.marker_setpoints)
-            print("drone pos",self.drone_position)
+            # print("marker sp",self.marker_setpoints)
+            # print("drone pos",self.drone_position)
         else:
             self.check_setpoint_queue()
             pub_msg.lat=self.setpoint[0]
@@ -593,15 +552,6 @@ def main():
     while not rospy.is_shutdown():
         # if all(delivery_control.drone_position):
         delivery_control.setpoint_control()
-        # publish marker_data
-        if counter==0:
-            delivery_control.publish_marker_data()
-            counter+=1
-        else:
-            counter+=1
-            if counter ==50:
-                counter=0
-
         r.sleep()
 
 if __name__ == "__main__":

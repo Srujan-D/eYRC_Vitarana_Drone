@@ -117,13 +117,6 @@ class Edrone:
     # Imu callback function
     # The function gets executed each time when imu publishes /edrone/imu/data
 
-    # Note: The imu publishes various kind of data viz angular velocity, linear acceleration, magnetometer reading (if present),
-    # but here we are interested in the orientation which can be calculated by a complex algorithm called filtering which is not in the scope of this task,
-    # so for your ease, we have the orientation published directly BUT in quaternion format and not in euler angles.
-    # We need to convert the quaternion format to euler angles format to understand the orienataion of the edrone in an easy manner.
-    # Hint: To know the message structure of sensor_msgs/Imu, execute the following command in the terminal
-    # rosmsg show sensor_msgs/Imu
-
     def imu_callback(self, msg):
 
         self.drone_orientation_quaternion[0] = msg.orientation.x
@@ -304,7 +297,7 @@ class Edrone:
 if __name__ == "__main__":
 
     e_drone = Edrone()
-    #TODO: vary the publishing rate 
+
     r = rospy.Rate(50)  # specify rate in Hz based upon your desired PID sampling time, i.e. if desired sample time is 33ms specify rate as 30Hz
     rospy.on_shutdown(e_drone.reset)
     while not rospy.is_shutdown():

@@ -25,6 +25,7 @@ class MarkerDetect():
         self.img=None
         self.bridge = CvBridge()
        
+        self.iterations = 0
         self.target=[0,0,0]
         self.drone_position=[0,0,0]
         self.pub_center_pixels = center_x_y()
@@ -68,8 +69,14 @@ class MarkerDetect():
                 <= 0.2
             )
         ):
-            return True
+            if self.iterations>=10:
+                self.iterations=0
+                return True
+            else:
+                self.iterations+=1
+                return False
         else:
+            self.iterations = 0
             return False
 
 

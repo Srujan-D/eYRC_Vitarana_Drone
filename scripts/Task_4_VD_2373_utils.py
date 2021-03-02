@@ -79,10 +79,10 @@ def get_dist(coord1,coord2):
 
     return math.sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
 
-def get_set_point_sequence():               #for pickup attachment
+def get_set_point_sequence():             
     
-    # defining the constants
-    A1 = [18.9998102845,72.000142461,16.757981 - 0.2]
+    # defining the constants                 
+    A1 = [18.9998102845,72.000142461,16.757981 - 0.2] #extra 0.2 downward for pickup attachment
     X1 = [18.9999367615,72.000142461,16.757981]
     delta_lat = 0.000013552 
     delta_long = 0.000014245
@@ -117,7 +117,7 @@ def get_set_point_sequence():               #for pickup attachment
     deliveries=sorted(deliveries, key = lambda i: i['from_to_dist'])
 
     scheduled_ret,scheduled_del,instructions = schedule(returns,deliveries)
-    # scheduled_ret,scheduled_del,instructions = returns,deliveries,['DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY','RETURN','DELIVERY']
+
     for re in returns:
         scheduled_ret.append(re)
         print("")
@@ -133,17 +133,6 @@ def get_set_point_sequence():               #for pickup attachment
 
 
     write_schedule_to_csv(scheduled_ret,scheduled_del,orig_returns,orig_deliveries)
-
-    # for ret in returns:
-    #     print(get_dist())
-    #     for i in range(2):
-    #         ret['to'][i]-=start_coords[i]
-    #         ret['from'][i]-=start_coords[i]
-
-    # for deli in deliveries:
-    #     for i in range(2):
-    #         deli['to'][i]-=start_coords[i]
-    #         deli['from'][i]-=start_coords[i]
 
     for i in range(max(len(scheduled_del),len(scheduled_ret))):
         if i<len(scheduled_del):
