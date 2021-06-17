@@ -29,7 +29,7 @@ from sensor_msgs.msg import NavSatFix,LaserScan
 from vitarana_drone.srv import Gripper
 
 # util functions
-from Task_4_VD_2373_utils import *
+from Task_6_VD_2373_utils import *
 
 # Marker Detection
 import cv2
@@ -224,7 +224,7 @@ class SetpointControl():
                 self.pub_marker_data.err_y_m = long_to_y(self.drone_position[1])+marker_y_m
         else:
             # print("no_new_msg",msg)
-        self.prev_maker_data=msg
+            self.prev_maker_data=msg
 
     def check_lat_long_proximity(self,target,current=None):
         
@@ -411,7 +411,7 @@ class SetpointControl():
                             if (self.bottom_sensor_dist-(self.setpoint_queue[0][2]-self.setpoint_queue[1][2])>=0):
                                 self.setpoint_queue[1][2]= self.drone_position[2]-self.bottom_sensor_dist+0.31
                             else:
-                            self.checked_return_pickup_point= True
+                                self.checked_return_pickup_point= True
 
                         if (self.setpoint_queue[0][2]-self.setpoint_queue[1][2])>3:
                             self.setpoint_queue.insert(1,[self.setpoint_queue[0][0],self.setpoint_queue[0][1],self.setpoint_queue[0][2]-7])

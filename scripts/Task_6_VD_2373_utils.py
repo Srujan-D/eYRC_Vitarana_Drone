@@ -13,7 +13,7 @@ import csv
 import math 
 from pprint import pprint
 import copy
-from Task_5_VD_2373_scheduler_2 import schedule
+from Task_6_VD_2373_scheduler import schedule
 
 
 def x_to_lat(input_x):

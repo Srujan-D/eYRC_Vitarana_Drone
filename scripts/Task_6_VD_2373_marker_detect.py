@@ -7,15 +7,15 @@ Filename       Task_6_VD_2373_marker_detector.py
 Functions      range_finder_bottom_callback,gps_callback,setpoint_callback,check_proximity_setpoint,marker_detect_callback,get_coords_from_img,detect,main
 Global Variables     none
 '''
-from setpoint_control import SetpointControl
-import rospy
-import cv2,os,math
+import cv2,os
 import numpy as np
+from matplotlib import pyplot as plt
+from cv_bridge import CvBridge, CvBridgeError
+
+import rospy
 from vitarana_drone.msg import *
 from sensor_msgs.msg import Image,LaserScan,NavSatFix
 from std_msgs.msg import Float32
-from matplotlib import pyplot as plt
-from cv_bridge import CvBridge, CvBridgeError
 
 class MarkerDetect():
 

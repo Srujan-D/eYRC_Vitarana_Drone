@@ -23,7 +23,7 @@ import tf
 import math
 
 # util functions
-from Task_4_VD_2373_utils import *
+from Task_6_VD_2373_utils import *
 
 # from pid_tune.msg import PidTune
 from sensor_msgs.msg import Imu, NavSatFix,LaserScan
@@ -31,9 +31,6 @@ from std_msgs.msg import Float32
 from vitarana_drone.msg import *
 from vitarana_drone.srv import Gripper
 
-
-# util functions
-from Task_4_VD_2373_utils import *
 
 class Edrone:
     """docstring for Edrone"""
