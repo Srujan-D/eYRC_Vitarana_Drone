@@ -1,4 +1,4 @@
-# eYRC Vitarana drone
+# eYRC Vitarana drone 2020-21
 
 ![eYRC Vitarana Drone](./assets/project-eyrc.png)
 
