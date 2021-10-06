@@ -19,4 +19,4 @@ Tools used:
 
 You can check out our solution's demo here: [link][demo-link]
 
-[demo-link]: https://www.youtube.com/watch?v=YNv9PC7-EAY&t=0s
+[demo-link]: https://youtu.be/YNv9PC7-EAY?t=144
